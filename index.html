@@ -3,154 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kabelzugberechnung — FK Krämer</title>
+<title>Kabelzugberechnung v3 — Höhenprofil — FK Krämer</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root {
-  --bg: #0d1117; --s1: #161b22; --s2: #21262d; --s3: #30363d;
-  --border: #30363d; --accent: #388bfd; --accent2: #3fb950;
-  --warn: #d29922; --danger: #f85149;
-  --text: #e6edf3; --text2: #8b949e; --text3: #6e7681;
-  --radius: 8px; --gap: 16px;
+  --bg:#0d1117; --s1:#161b22; --s2:#21262d; --s3:#30363d;
+  --border:#30363d; --accent:#388bfd; --accent2:#3fb950;
+  --warn:#d29922; --danger:#f85149;
+  --text:#e6edf3; --text2:#8b949e; --text3:#6e7681;
+  --radius:8px;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 13px; min-height: 100vh; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe UI',sans-serif; font-size:13px; display:flex; flex-direction:column; }
 
-header {
-  background: var(--s1); border-bottom: 1px solid var(--border);
-  padding: 12px 24px; display: flex; align-items: center; gap: 16px;
-}
-header .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
-header .subtitle { color: var(--text2); font-size: 12px; }
-header .tag { margin-left: auto; background: var(--s3); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--text2); }
+header { background:var(--s1); border-bottom:1px solid var(--border); padding:10px 20px; display:flex; align-items:center; gap:12px; flex-shrink:0; z-index:10; }
+.logo { font-size:17px; font-weight:700; color:var(--accent); }
+.subtitle { color:var(--text2); font-size:12px; }
+.v2-badge { background:rgba(56,139,253,.15); border:1px solid var(--accent); color:var(--accent); border-radius:20px; padding:2px 9px; font-size:11px; font-weight:600; }
+.tag { margin-left:auto; background:var(--s3); border:1px solid var(--border); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--text2); }
 
-.layout { display: grid; grid-template-columns: 380px 1fr; gap: 0; height: calc(100vh - 49px); overflow: hidden; }
+.layout { display:grid; grid-template-columns:360px 1fr 1fr; height:calc(100vh - 45px); overflow:hidden; }
+.left-panel  { background:var(--s1); border-right:1px solid var(--border); overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:14px; }
+.mid-panel   { overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:14px; }
+.right-panel { border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
 
-.left-panel { background: var(--s1); border-right: 1px solid var(--border); overflow-y: auto; padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
-.right-panel { overflow-y: auto; padding: var(--gap); display: flex; flex-direction: column; gap: var(--gap); }
+#map { flex:1; min-height:0; }
+.map-controls { background:var(--s1); border-top:1px solid var(--border); padding:10px 12px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+.map-search-row { display:flex; gap:6px; }
+.map-search-row input { flex:1; background:var(--s3); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:5px 9px; font-size:12px; outline:none; }
+.map-search-row input:focus { border-color:var(--accent); }
+.layer-btns { display:flex; gap:5px; }
+.layer-btn { flex:1; background:var(--s3); border:1px solid var(--border); border-radius:5px; color:var(--text2); padding:4px 6px; font-size:11px; cursor:pointer; text-align:center; font-weight:500; }
+.layer-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.map-action-row { display:flex; gap:5px; align-items:center; }
+.pt-count { background:var(--accent); color:#fff; border-radius:10px; padding:2px 8px; font-size:11px; font-weight:700; }
+.map-tip { font-size:10px; color:var(--text3); flex:1; }
 
-.card { background: var(--s2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
-.card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-.card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.card { background:var(--s2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+.card-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--text2); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.dot { width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block; }
+label { display:block; font-size:12px; color:var(--text2); margin-bottom:3px; }
+select,input[type=number],input[type=text] { width:100%; background:var(--s3); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:6px 9px; font-size:13px; outline:none; }
+select:focus,input:focus { border-color:var(--accent); }
+.form-group { margin-bottom:9px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:9px; }
+.cable-info { background:var(--s1); border:1px solid var(--border); border-radius:6px; padding:9px 11px; margin-top:8px; }
+.ci-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px 10px; }
+.ci-label { font-size:10px; color:var(--text3); }
+.ci-value { font-size:12px; font-weight:600; }
 
-label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-select, input[type=number], input[type=text] {
-  width: 100%; background: var(--s3); border: 1px solid var(--border); border-radius: 6px;
-  color: var(--text); padding: 7px 10px; font-size: 13px; outline: none;
-  transition: border-color 0.15s;
-}
-select:focus, input:focus { border-color: var(--accent); }
+.route-list { display:flex; flex-direction:column; gap:5px; max-height:280px; overflow-y:auto; }
+.route-item { background:var(--s1); border:1px solid var(--border); border-radius:6px; padding:8px 10px; display:flex; align-items:flex-start; gap:7px; }
+.ri-icon { font-size:14px; width:20px; text-align:center; flex-shrink:0; margin-top:1px; }
+.ri-body { flex:1; min-width:0; }
+.ri-main { font-weight:600; font-size:12px; }
+.ri-sub { font-size:11px; color:var(--text2); display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:3px; }
+.ri-force { font-size:12px; font-weight:700; min-width:72px; text-align:right; flex-shrink:0; }
+.mu-inline { width:58px; padding:2px 5px; font-size:11px; background:var(--s3); border:1px solid var(--border); border-radius:4px; color:var(--text); text-align:center; }
+.mu-inline:focus { border-color:var(--accent); outline:none; }
+.mu-quick { display:inline-flex; gap:3px; }
+.mu-quick span { cursor:pointer; color:var(--accent); font-size:10px; padding:1px 5px; background:rgba(56,139,253,.1); border-radius:3px; }
+.mu-quick span:hover { background:rgba(56,139,253,.25); }
+.force-ok { color:var(--accent2); }
+.force-warn { color:var(--warn); }
+.force-danger { color:var(--danger); }
 
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
-.form-group { margin-bottom: 10px; }
+.elev-tag { font-size:10px; padding:1px 6px; border-radius:3px; font-weight:600; white-space:nowrap; }
+.elev-up   { background:rgba(248,81,73,.15);   color:var(--danger); }
+.elev-down { background:rgba(63,185,80,.15);   color:var(--accent2); }
+.elev-flat { background:rgba(139,148,158,.12); color:var(--text2); }
+.elev-loading { color:var(--text3); font-style:italic; font-size:10px; }
 
-.cable-info { background: var(--s1); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-top: 10px; }
-.cable-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 12px; }
-.ci-item { }
-.ci-label { font-size: 10px; color: var(--text3); }
-.ci-value { font-size: 13px; font-weight: 600; color: var(--text); }
+.machine-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; }
+.machine-card { border:2px solid var(--border); border-radius:var(--radius); padding:9px 10px; cursor:pointer; transition:border-color .15s,background .15s; }
+.machine-card.selected { border-color:var(--accent); background:rgba(56,139,253,.08); }
+.mc-name { font-weight:600; font-size:12px; margin-bottom:2px; }
+.mc-force { font-size:16px; font-weight:700; }
+.mc-note { font-size:10px; color:var(--text2); margin-top:2px; }
+.mc-status { font-size:10px; font-weight:600; margin-top:5px; padding:1px 7px; border-radius:10px; display:inline-block; }
+.status-ok  { background:rgba(63,185,80,.15);  color:var(--accent2); }
+.status-err { background:rgba(248,81,73,.15);  color:var(--danger); }
 
-.btn {
-  background: var(--accent); border: none; border-radius: 6px; color: #fff;
-  padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
-}
-.btn:hover { opacity: 0.85; }
-.btn-sm { padding: 4px 10px; font-size: 11px; }
-.btn-ghost { background: var(--s3); color: var(--text); border: 1px solid var(--border); }
-.btn-ghost:hover { background: var(--border); opacity: 1; }
-.btn-danger { background: var(--danger); }
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+.stat-card { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:11px; }
+.stat-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+.stat-value { font-size:20px; font-weight:700; line-height:1; }
+.stat-unit { font-size:11px; color:var(--text2); margin-top:2px; }
+.alert { padding:7px 10px; border-radius:6px; font-size:11px; margin-top:5px; }
+.alert-ok     { background:rgba(63,185,80,.1);   border:1px solid rgba(63,185,80,.3);   color:var(--accent2); }
+.alert-warn   { background:rgba(210,153,34,.1);  border:1px solid rgba(210,153,34,.3);  color:var(--warn); }
+.alert-danger { background:rgba(248,81,73,.1);   border:1px solid rgba(248,81,73,.3);   color:var(--danger); }
 
-.route-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 300px; overflow-y: auto; }
-.route-item {
-  background: var(--s1); border: 1px solid var(--border); border-radius: 6px;
-  padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: default;
-}
-.route-item.dragging { opacity: 0.5; }
-.route-item .ri-icon { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
-.route-item .ri-body { flex: 1; min-width: 0; }
-.route-item .ri-main { font-weight: 600; font-size: 13px; }
-.route-item .ri-sub { font-size: 11px; color: var(--text2); }
-.route-item .ri-force { font-size: 12px; font-weight: 700; min-width: 80px; text-align: right; }
-.route-item .ri-del { background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px 6px; font-size: 16px; line-height: 1; border-radius: 4px; }
-.route-item .ri-del:hover { color: var(--danger); background: rgba(248,81,73,0.1); }
+.viz-container { background:var(--s2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+.viz-tabs { display:flex; gap:6px; margin-bottom:12px; }
+.viz-tab { background:var(--s3); border:1px solid var(--border); border-radius:6px; padding:5px 14px; font-size:11px; font-weight:600; color:var(--text2); cursor:pointer; text-transform:uppercase; letter-spacing:.5px; }
+.viz-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+#route-svg-wrap,#force-chart-wrap,#elev-profile-wrap { width:100%; min-height:160px; background:var(--s1); border-radius:6px; border:1px solid var(--border); overflow:auto; }
 
-.force-ok { color: var(--accent2); }
-.force-warn { color: var(--warn); }
-.force-danger { color: var(--danger); }
-
-.add-controls { background: var(--s1); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
-.add-controls .tab-row { display: flex; gap: 6px; margin-bottom: 10px; }
-.tab-btn { background: var(--s3); border: 1px solid var(--border); border-radius: 6px; padding: 5px 14px; font-size: 12px; color: var(--text2); cursor: pointer; }
-.tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-/* Visualization */
-.viz-container { background: var(--s2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
-.viz-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-.viz-tab { background: var(--s3); border: 1px solid var(--border); border-radius: 6px; padding: 5px 14px; font-size: 11px; font-weight: 600; color: var(--text2); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-.viz-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-#route-svg-wrap, #force-chart-wrap { width: 100%; min-height: 200px; background: var(--s1); border-radius: 6px; border: 1px solid var(--border); overflow: auto; }
-#route-svg, #force-chart-svg { display: block; }
-
-/* Summary */
-.summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.stat-card { background: var(--s1); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
-.stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
-.stat-value { font-size: 22px; font-weight: 700; line-height: 1; }
-.stat-unit { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-/* Machine comparison */
-.machine-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.machine-card {
-  border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 12px;
-  cursor: pointer; transition: border-color 0.15s, background 0.15s;
-}
-.machine-card.selected { border-color: var(--accent); background: rgba(56,139,253,0.08); }
-.machine-card .mc-name { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
-.machine-card .mc-force { font-size: 18px; font-weight: 700; }
-.machine-card .mc-note { font-size: 10px; color: var(--text2); margin-top: 3px; }
-.machine-card .mc-status { font-size: 11px; font-weight: 600; margin-top: 6px; padding: 2px 8px; border-radius: 10px; display: inline-block; }
-.status-ok { background: rgba(63,185,80,0.15); color: var(--accent2); }
-.status-warn { background: rgba(210,153,34,0.15); color: var(--warn); }
-.status-err { background: rgba(248,81,73,0.15); color: var(--danger); }
-
-/* Results table */
-.result-table { width: 100%; border-collapse: collapse; }
-.result-table th { background: var(--s3); padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); }
-.result-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
-.result-table tr:last-child td { border-bottom: none; }
-.result-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-/* Progress bar */
-.force-bar-wrap { height: 8px; background: var(--s3); border-radius: 4px; overflow: hidden; margin-top: 2px; }
-.force-bar { height: 100%; border-radius: 4px; transition: width 0.3s; }
-
-/* μ inline inputs */
-.mu-inline { width: 64px; padding: 3px 6px; font-size: 12px; background: var(--s3); border: 1px solid var(--border); border-radius: 4px; color: var(--text); text-align: center; }
-.mu-inline:focus { border-color: var(--accent); outline: none; }
-.mu-quick { display: inline-flex; gap: 4px; margin-left: 4px; flex-wrap: wrap; }
-.mu-quick span { cursor: pointer; color: var(--accent); font-size: 10px; padding: 2px 6px; background: rgba(56,139,253,0.1); border-radius: 3px; white-space: nowrap; }
-.mu-quick span:hover { background: rgba(56,139,253,0.25); }
-.mu-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-
-/* Alerts */
-.alert { padding: 8px 12px; border-radius: 6px; font-size: 12px; display: flex; align-items: flex-start; gap: 8px; }
-.alert-ok { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); color: var(--accent2); }
-.alert-warn { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); color: var(--warn); }
-.alert-danger { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: var(--danger); }
-
-.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
-.empty-state .es-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-state .es-text { font-size: 13px; }
-
-@media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; height: auto; }
-  .left-panel { height: auto; }
-  .summary-grid, .machine-grid { grid-template-columns: 1fr 1fr; }
-}
-
-.sep { height: 1px; background: var(--border); margin: 4px 0; }
+.result-table { width:100%; border-collapse:collapse; }
+.result-table th { background:var(--s3); padding:7px 11px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--text2); }
+.result-table td { padding:7px 11px; border-bottom:1px solid var(--border); font-size:12px; }
+.result-table tr:last-child td { border-bottom:none; }
+.force-bar-wrap { height:6px; background:var(--s3); border-radius:3px; overflow:hidden; margin-top:2px; }
+.force-bar { height:100%; border-radius:3px; }
+.empty-state { text-align:center; padding:32px 16px; color:var(--text3); font-size:12px; line-height:1.8; }
+.btn { background:var(--accent); border:none; border-radius:6px; color:#fff; padding:6px 13px; font-size:12px; font-weight:600; cursor:pointer; }
+.btn:hover { opacity:.85; }
+.btn-sm { padding:4px 9px; font-size:11px; }
+.btn-ghost { background:var(--s3); color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover { background:var(--border); opacity:1; }
+.btn-row { display:flex; gap:6px; flex-wrap:wrap; }
+.leaflet-control-attribution { background:rgba(0,0,0,.55)!important; color:#8b949e!important; font-size:9px!important; }
+.leaflet-control-attribution a { color:#8b949e!important; }
+.leaflet-control-zoom a { background:var(--s2)!important; color:var(--text)!important; border-color:var(--border)!important; }
+.leaflet-control-zoom a:hover { background:var(--s3)!important; }
 </style>
 </head>
 <body>
@@ -158,14 +126,13 @@ select:focus, input:focus { border-color: var(--accent); }
 <header>
   <div class="logo">FK Krämer</div>
   <div class="subtitle">Kabelzugberechnung</div>
-  <div class="tag">v1.0</div>
+  <div class="v2-badge">v3 Höhenprofil</div>
+  <div class="tag">OpenStreetMap · Esri Satellit · SRTM Höhendaten</div>
 </header>
 
 <div class="layout">
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
 
-    <!-- Kabelauswahl -->
+  <div class="left-panel">
     <div class="card">
       <div class="card-title"><span class="dot"></span>Kabel</div>
       <div class="form-group">
@@ -174,788 +141,660 @@ select:focus, input:focus { border-color: var(--accent); }
           <option value="">— Kabel wählen —</option>
         </select>
       </div>
-      <div id="cable-info" class="cable-info" style="display:none;">
-        <div class="cable-info-grid" id="cable-info-grid"></div>
+      <div id="cable-info" class="cable-info" style="display:none">
+        <div class="ci-grid" id="cable-info-grid"></div>
       </div>
-      <div class="form-group" style="margin-top:10px;">
-        <label>Tatsächliche Kabellänge auf Trommel [m] <span style="color:var(--text3);font-size:11px;">→ berechnet Trommelgewicht</span></label>
-        <input type="number" id="cable-length" placeholder="Standardlänge wählen…" min="1" oninput="recalc()">
+      <div class="form-group" style="margin-top:9px">
+        <label>Kabellänge auf Trommel [m] <span style="color:var(--text3);font-size:10px;">→ berechnet Trommelgewicht</span></label>
+        <input type="number" id="cable-length" placeholder="Standardlänge" min="1" oninput="recalc()">
       </div>
     </div>
 
-    <!-- Trassenverlauf -->
     <div class="card">
-      <div class="card-title"><span class="dot"></span>Trassenverlauf</div>
-
-      <div class="add-controls">
-        <div class="tab-row">
-          <button class="tab-btn active" id="tab-seg" onclick="switchTab('seg')">Strecke</button>
-          <button class="tab-btn" id="tab-cur" onclick="switchTab('cur')">Kurve</button>
-        </div>
-        <div id="add-seg-form">
-          <div class="form-row">
-            <div>
-              <label>Länge [m]</label>
-              <input type="number" id="seg-length" value="100" min="1">
-            </div>
-            <div>
-              <label>Bezeichnung</label>
-              <input type="text" id="seg-label" placeholder="optional">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Reibungsbeiwert μ <span style="color:var(--text3);font-size:10px;">F += L × Rollwiderstand × μ</span></label>
-            <div class="mu-row">
-              <input type="number" class="mu-inline" id="seg-mu" value="0.30" step="0.05" min="0.01" max="2">
-              <span class="mu-quick">
-                <span onclick="document.getElementById('seg-mu').value='0.10'">0,10 flach</span>
-                <span onclick="document.getElementById('seg-mu').value='0.30'">0,30 normal</span>
-                <span onclick="document.getElementById('seg-mu').value='0.50'">0,50 Rohr</span>
-              </span>
-            </div>
-          </div>
-          <button class="btn btn-sm" onclick="addSegment()">+ Strecke hinzufügen</button>
-        </div>
-        <div id="add-cur-form" style="display:none;">
-          <div class="form-row">
-            <div>
-              <label>Winkel</label>
-              <select id="cur-angle">
-                <option value="22.5">22,5°</option>
-                <option value="30">30°</option>
-                <option value="45" selected>45°</option>
-                <option value="60">60°</option>
-                <option value="90">90°</option>
-                <option value="135">135°</option>
-                <option value="180">180°</option>
-                <option value="custom">Frei…</option>
-              </select>
-            </div>
-            <div>
-              <label>Richtung</label>
-              <select id="cur-dir">
-                <option value="right">Rechts ↱</option>
-                <option value="left">Links ↰</option>
-              </select>
-            </div>
-          </div>
-          <div id="custom-angle-row" style="display:none; margin-bottom:8px;">
-            <label>Eigener Winkel [°]</label>
-            <input type="number" id="cur-custom-angle" value="90" min="1" max="360">
-          </div>
-          <div class="form-group">
-            <label>Reibungsbeiwert μ (Kurve) <span style="color:var(--text3);font-size:10px;">F_out = F_in × e^(μ×α)</span></label>
-            <div class="mu-row">
-              <input type="number" class="mu-inline" id="cur-mu" value="0.25" step="0.05" min="0.01" max="1" oninput="updateCurveFactorPreview()">
-              <span class="mu-quick">
-                <span onclick="document.getElementById('cur-mu').value='0.15';updateCurveFactorPreview()">0,15 leicht</span>
-                <span onclick="document.getElementById('cur-mu').value='0.25';updateCurveFactorPreview()">0,25 normal</span>
-                <span onclick="document.getElementById('cur-mu').value='0.35';updateCurveFactorPreview()">0,35 eng</span>
-              </span>
-            </div>
-          </div>
-          <div style="font-size:11px; color:var(--text2); margin-bottom:8px;">
-            Faktor bei gewähltem Winkel: <span id="curve-factor-preview" style="color:var(--accent); font-weight:700;">1,500</span>
-          </div>
-          <button class="btn btn-sm" onclick="addCurve()">+ Kurve hinzufügen</button>
-        </div>
+      <div class="card-title"><span class="dot"></span>Standard-Reibungsbeiwerte</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Werden beim Setzen neuer Kartenpunkte angewendet — danach pro Element editierbar.</div>
+      <div class="form-row">
+        <div><label>μ Strecke</label><input type="number" id="def-seg-mu" value="0.30" step="0.05" min="0.01" max="2"></div>
+        <div><label>μ Kurve</label><input type="number" id="def-cur-mu" value="0.25" step="0.05" min="0.01" max="1"></div>
       </div>
-
-      <div id="route-list" class="route-list"></div>
-
-      <div style="margin-top:10px;" class="btn-row">
-        <button class="btn btn-ghost btn-sm" onclick="clearRoute()">Löschen</button>
-        <button class="btn btn-ghost btn-sm" onclick="loadExample('kusel')">Beispiel: Kusel</button>
-        <button class="btn btn-ghost btn-sm" onclick="loadExample('luwihafen')">Beispiel: Ludwigshafen</button>
+      <div id="rw-info" style="font-size:11px;color:var(--text2);padding:6px 9px;background:var(--s1);border-radius:5px;border:1px solid var(--border);">
+        Rollwiderstand: — kg/m (Kabel wählen)
       </div>
     </div>
 
-    <!-- Maschine -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Trassenverlauf <span id="route-stats" style="font-size:10px;color:var(--text3);margin-left:4px;font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+      <div id="route-list" class="route-list">
+        <div class="empty-state" style="padding:16px;">Punkte auf der Karte setzen →</div>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="undoLastPoint()">↩ Letzten löschen</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearAll()">Alles löschen</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title"><span class="dot"></span>Zugmaschine</div>
       <div class="machine-grid" id="machine-grid"></div>
     </div>
-
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-
-    <!-- Visualisierung -->
+  <div class="mid-panel">
     <div class="viz-container">
       <div class="card-title"><span class="dot"></span>Visualisierung</div>
       <div class="viz-tabs">
-        <button class="viz-tab active" id="vtab-route" onclick="switchVizTab('route')">Trassenplan</button>
-        <button class="viz-tab" id="vtab-force" onclick="switchVizTab('force')">Kraftverlauf</button>
+        <button class="viz-tab active" id="vtab-route" onclick="switchViz('route')">Trassenplan</button>
+        <button class="viz-tab"        id="vtab-force" onclick="switchViz('force')">Kraftverlauf</button>
+        <button class="viz-tab"        id="vtab-elev"  onclick="switchViz('elev')">Höhenprofil</button>
       </div>
-      <div id="route-svg-wrap">
-        <div id="route-empty" class="empty-state"><div class="es-icon">📐</div><div class="es-text">Kabel wählen und Trasse anlegen</div></div>
-        <svg id="route-svg" style="display:none;"></svg>
-      </div>
-      <div id="force-chart-wrap" style="display:none;">
-        <svg id="force-chart-svg"></svg>
-      </div>
+      <div id="route-svg-wrap"><div class="empty-state">Punkte auf der Karte setzen.</div></div>
+      <div id="force-chart-wrap" style="display:none"><div class="empty-state">Punkte auf der Karte setzen.</div></div>
+      <div id="elev-profile-wrap" style="display:none"><div class="empty-state">Punkte setzen — Höhendaten werden automatisch geladen.</div></div>
     </div>
 
-    <!-- Ergebnisse -->
     <div class="card">
       <div class="card-title"><span class="dot"></span>Zugkraft Schritt für Schritt</div>
-      <div id="result-table-wrap">
-        <div class="empty-state"><div class="es-text" style="padding:20px;">Noch keine Trasse definiert.</div></div>
-      </div>
+      <div id="result-table-wrap"><div class="empty-state">Kabel wählen und Punkte auf der Karte setzen.</div></div>
     </div>
 
-    <!-- Zusammenfassung -->
     <div class="card">
       <div class="card-title"><span class="dot"></span>Zusammenfassung</div>
-      <div class="summary-grid" id="summary-stats">
-        <div class="stat-card">
-          <div class="stat-label">Max. Zugkraft</div>
-          <div class="stat-value" id="sum-force">—</div>
-          <div class="stat-unit">kg</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Kabelgrenze</div>
-          <div class="stat-value" id="sum-limit">—</div>
-          <div class="stat-unit">kg</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Auslastung</div>
-          <div class="stat-value" id="sum-pct">—</div>
-          <div class="stat-unit">% der Grenze</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Gesamtlänge</div>
-          <div class="stat-value" id="sum-len">—</div>
-          <div class="stat-unit">m</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Anzugskraft</div>
-          <div class="stat-value" id="sum-start">—</div>
-          <div class="stat-unit">kg (5 % Trommel)</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Rollw./m</div>
-          <div class="stat-value" id="sum-rw">—</div>
-          <div class="stat-unit">kg/m</div>
-        </div>
+      <div class="summary-grid">
+        <div class="stat-card"><div class="stat-label">Max. Zugkraft</div><div class="stat-value" id="sum-force">—</div><div class="stat-unit">kg</div></div>
+        <div class="stat-card"><div class="stat-label">Kabelgrenze</div><div class="stat-value" id="sum-limit">—</div><div class="stat-unit">kg</div></div>
+        <div class="stat-card"><div class="stat-label">Auslastung</div><div class="stat-value" id="sum-pct">—</div><div class="stat-unit">%</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamtlänge</div><div class="stat-value" id="sum-len">—</div><div class="stat-unit">m</div></div>
+        <div class="stat-card"><div class="stat-label">Anstieg gesamt</div><div class="stat-value force-danger" id="sum-ascent">—</div><div class="stat-unit">m</div></div>
+        <div class="stat-card"><div class="stat-label">Abstieg gesamt</div><div class="stat-value force-ok" id="sum-descent">—</div><div class="stat-unit">m</div></div>
       </div>
-      <div id="alerts-wrap" style="margin-top:12px; display:flex; flex-direction:column; gap:6px;"></div>
+      <div id="alerts-wrap"></div>
     </div>
-
   </div>
+
+  <div class="right-panel">
+    <div id="map"></div>
+    <div class="map-controls">
+      <div class="map-search-row">
+        <input type="text" id="addr-input" placeholder="Adresse suchen…" onkeydown="if(event.key==='Enter')searchAddr()">
+        <button class="btn btn-sm" onclick="searchAddr()">Suchen</button>
+      </div>
+      <div class="layer-btns">
+        <button class="layer-btn active" id="lb-dark"      onclick="setLayer('dark')">🌑 Dunkel</button>
+        <button class="layer-btn"        id="lb-satellite" onclick="setLayer('satellite')">🛰 Satellit</button>
+        <button class="layer-btn"        id="lb-street"    onclick="setLayer('street')">🗺 Straße</button>
+      </div>
+      <div class="map-action-row">
+        <span class="map-tip">Klick = Punkt setzen</span>
+        <span class="pt-count" id="pt-count">0 Punkte</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-// ─── DATENBASIS ────────────────────────────────────────────────────────────
 const CABLES = [
-  { id:'nayy_4x185', name:'NAYY-J 1x4x185 SE', short:'4×185 SE', voltage:'0,6/1 kV',
-    d:51, bendR:770, cs:740, fMax:2220, gw:5.08, nw:3.88, drumW:2539, drumL:500, mfr:'Prysmian' },
-  { id:'na2xs_1x150', name:'NA2XS(F)2Y 1×150 rm/25 — Einzelkabel', short:'1×150', voltage:'12/20 kV',
-    d:36, bendR:540, cs:150, fMax:450, gw:1.69, nw:1.29, drumW:1683, drumL:998, mfr:'Prysmian' },
-  { id:'na2xs_3x150', name:'NA2XS(F)2Y 3×150 rm/25 — 3er-System', short:'3×150 Sys.', voltage:'12/20 kV',
-    d:36, bendR:540, cs:450, fMax:1350, gw:5.07, nw:3.87, drumW:5049, drumL:998, mfr:'Prysmian' },
-  { id:'na2xs_1x240', name:'NA2XS(F)2Y 1×240 rm/25 — Einzelkabel', short:'1×240', voltage:'12/20 kV',
-    d:40, bendR:600, cs:240, fMax:720, gw:2.04, nw:1.64, drumW:2048, drumL:1004, mfr:'Prysmian' },
-  { id:'na2xs_3x240', name:'NA2XS(F)2Y 3×240 rm/25 — 3er-System', short:'3×240 Sys.', voltage:'12/20 kV',
-    d:40, bendR:600, cs:720, fMax:2160, gw:6.12, nw:4.93, drumW:6144, drumL:1004, mfr:'Prysmian' },
-  { id:'na2xs_1x300', name:'NA2XS(F)2Y 1×300 rm/25 — Einzelkabel', short:'1×300', voltage:'12/20 kV',
-    d:43, bendR:645, cs:300, fMax:900, gw:2.28, nw:1.88, drumW:2297, drumL:1008, mfr:'Prysmian' },
-  { id:'na2xs_3x300', name:'NA2XS(F)2Y 3×300 rm/25 — 3er-System', short:'3×300 Sys.', voltage:'12/20 kV',
-    d:43, bendR:645, cs:900, fMax:2700, gw:6.84, nw:5.65, drumW:6891, drumL:1008, mfr:'Prysmian' },
-  { id:'na2xs_1x400', name:'NA2XS(F)2Y 1×400 rm/35 — Einzelkabel', short:'1×400', voltage:'12/20 kV',
-    d:45, bendR:680, cs:400, fMax:1200, gw:3.07, nw:2.32, drumW:3069, drumL:1000, mfr:'Prysmian' },
-  { id:'na2xs_3x400', name:'NA2XS(F)2Y 3×400 rm/35 — 3er-System', short:'3×400 Sys.', voltage:'12/20 kV',
-    d:45, bendR:680, cs:1200, fMax:3600, gw:9.21, nw:6.96, drumW:9207, drumL:1000, mfr:'Prysmian' },
+  { id:'nayy_4x185',  name:'NAYY-J 1x4x185 SE',                    d:51, bendR:770, cs:740,  fMax:2220, gw:5.08, nw:3.88, drumW:2539, drumL:500  },
+  { id:'na2xs_1x150', name:'NA2XS(F)2Y 1×150 rm/25 — Einzelkabel', d:36, bendR:540, cs:150,  fMax:450,  gw:1.69, nw:1.29, drumW:1683, drumL:998  },
+  { id:'na2xs_3x150', name:'NA2XS(F)2Y 3×150 rm/25 — 3er-System',  d:36, bendR:540, cs:450,  fMax:1350, gw:5.07, nw:3.87, drumW:5049, drumL:998  },
+  { id:'na2xs_1x240', name:'NA2XS(F)2Y 1×240 rm/25 — Einzelkabel', d:40, bendR:600, cs:240,  fMax:720,  gw:2.04, nw:1.64, drumW:2048, drumL:1004 },
+  { id:'na2xs_3x240', name:'NA2XS(F)2Y 3×240 rm/25 — 3er-System',  d:40, bendR:600, cs:720,  fMax:2160, gw:6.12, nw:4.93, drumW:6144, drumL:1004 },
+  { id:'na2xs_1x300', name:'NA2XS(F)2Y 1×300 rm/25 — Einzelkabel', d:43, bendR:645, cs:300,  fMax:900,  gw:2.28, nw:1.88, drumW:2297, drumL:1008 },
+  { id:'na2xs_3x300', name:'NA2XS(F)2Y 3×300 rm/25 — 3er-System',  d:43, bendR:645, cs:900,  fMax:2700, gw:6.84, nw:5.65, drumW:6891, drumL:1008 },
+  { id:'na2xs_1x400', name:'NA2XS(F)2Y 1×400 rm/35 — Einzelkabel', d:45, bendR:680, cs:400,  fMax:1200, gw:3.07, nw:2.32, drumW:3069, drumL:1000 },
+  { id:'na2xs_3x400', name:'NA2XS(F)2Y 3×400 rm/35 — 3er-System',  d:45, bendR:680, cs:1200, fMax:3600, gw:9.21, nw:6.96, drumW:9207, drumL:1000 },
 ];
-
 const MACHINES = [
-  { id:'thaler', name:'Thaler Winde', maxF:2039, note:'2.000 daN', rope:null },
-  { id:'rp800', name:'Runpotec CW 800 E', maxF:800, note:'d ≤ 55 mm · 4 m/min', rope:300 },
-  { id:'rp400', name:'Runpotec CW 800 E', maxF:400, note:'d ≤ 110 mm · 8 m/min', rope:300 },
+  { id:'thaler', name:'Thaler Winde',      maxF:2039, note:'2.000 daN' },
+  { id:'rp800',  name:'Runpotec CW 800 E', maxF:800,  note:'d ≤ 55 mm · 4 m/min' },
+  { id:'rp400',  name:'Runpotec CW 800 E', maxF:400,  note:'d ≤ 110 mm · 8 m/min' },
 ];
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-let st = {
-  cable: null,
-  route: [],       // [{type:'seg', len, label, mu}, {type:'cur', angle, dir, mu}]
-  machine: 'thaler',
-  vizTab: 'route',
-  addTab: 'seg',
+const st = {
+  cable:null, machine:'thaler',
+  waypoints:[], markers:[], polyline:null, colorSegs:[],
+  route:[], elevations:[], vizTab:'route',
 };
 
-function curveFactorForAngle(deg, mu) {
-  return Math.exp((mu || 0.25) * deg * Math.PI / 180);
+const defSegMu = () => parseFloat(document.getElementById('def-seg-mu').value)||0.3;
+const defCurMu = () => parseFloat(document.getElementById('def-cur-mu').value)||0.25;
+
+// ─── MAP ────────────────────────────────────────────────────────────────────
+const tileLayers = {
+  dark:      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+               {attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:20}),
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+               {attribution:'© Esri, Maxar, GeoEye',maxZoom:19}),
+  street:    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+               {attribution:'© OpenStreetMap',maxZoom:19}),
+};
+const map = L.map('map',{zoomControl:true}).setView([49.4440,7.7689],13);
+tileLayers.dark.addTo(map);
+let activeLayerKey='dark';
+
+function setLayer(key){
+  map.removeLayer(tileLayers[activeLayerKey]);
+  tileLayers[key].addTo(map);
+  activeLayerKey=key;
+  ['dark','satellite','street'].forEach(k=>document.getElementById('lb-'+k).classList.toggle('active',k===key));
+}
+map.on('click',e=>addWaypoint(e.latlng,false));
+
+function mkIcon(n,col){
+  const bg=col||'#388bfd';
+  return L.divIcon({
+    html:`<div style="background:${bg};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:2px solid #0d1117;box-shadow:0 2px 8px rgba(0,0,0,.7);">${n}</div>`,
+    className:'',iconSize:[26,26],iconAnchor:[13,13]
+  });
 }
 
-// ─── INIT ──────────────────────────────────────────────────────────────────
-function init() {
-  const sel = document.getElementById('cable-select');
-  CABLES.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    sel.appendChild(opt);
-  });
-  renderMachines();
-  updateCurveFactorPreview();
-  document.getElementById('cur-angle').addEventListener('change', () => {
-    document.getElementById('custom-angle-row').style.display =
-      document.getElementById('cur-angle').value === 'custom' ? 'block' : 'none';
-    updateCurveFactorPreview();
-  });
-  document.getElementById('cur-custom-angle').addEventListener('input', updateCurveFactorPreview);
+// ─── HÖHENDATEN ─────────────────────────────────────────────────────────────
+async function fetchWithTimeout(url, ms=8000){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),ms);
+  try { return await fetch(url,{signal:ctrl.signal}); }
+  finally { clearTimeout(t); }
 }
 
-// ─── CABLE ─────────────────────────────────────────────────────────────────
-function onCableChange() {
-  const id = document.getElementById('cable-select').value;
-  st.cable = CABLES.find(c => c.id === id) || null;
-  const infoEl = document.getElementById('cable-info');
-  if (st.cable) {
-    infoEl.style.display = 'block';
-    document.getElementById('cable-info-grid').innerHTML = `
-      <div class="ci-item"><div class="ci-label">Querschnitt</div><div class="ci-value">${st.cable.cs} mm²</div></div>
-      <div class="ci-item"><div class="ci-label">Durchmesser</div><div class="ci-value">${st.cable.d} mm</div></div>
-      <div class="ci-item"><div class="ci-label">Biegeradius</div><div class="ci-value">${st.cable.bendR} mm</div></div>
-      <div class="ci-item"><div class="ci-label">Max. Zugkraft</div><div class="ci-value text-${forceClass(1,1)}">${fmt(st.cable.fMax)} kg</div></div>
-      <div class="ci-item"><div class="ci-label">Rollwiderstand</div><div class="ci-value" style="color:var(--accent)">${st.cable.gw} kg/m</div></div>
-      <div class="ci-item"><div class="ci-label">Standard-Trommel</div><div class="ci-value">${st.cable.drumL} m / ${fmt(st.cable.drumW)} kg</div></div>
-    `;
-    document.getElementById('cable-length').placeholder = `${st.cable.drumL} m (Standard)`;
-  } else {
-    infoEl.style.display = 'none';
+async function fetchElevation(idx){
+  const latlng=st.waypoints[idx];
+  if(!latlng) return;
+  const loc=`${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}`;
+
+  // Try three sources in order: EU-DEM 25m (best for Germany), SRTM 30m, Open-Elevation fallback
+  const sources=[
+    `https://api.opentopodata.org/v1/eudem25m?locations=${loc}`,
+    `https://api.opentopodata.org/v1/srtm30m?locations=${loc}`,
+    `https://api.open-elevation.com/api/v1/lookup?locations=${loc}`,
+  ];
+
+  for(const url of sources){
+    try{
+      let r=await fetchWithTimeout(url);
+      if(r.status===429){
+        await new Promise(res=>setTimeout(res,1500));
+        r=await fetchWithTimeout(url); // one retry after back-off
+      }
+      if(!r.ok) continue;
+      const d=await r.json();
+      const elev=d.results?.[0]?.elevation;
+      if(typeof elev==='number'){
+        st.elevations[idx]=elev;
+        rebuildRoute(true);
+        return;
+      }
+    }catch(e){
+      console.warn(`Elevation source failed (${url}):`,e.message);
+    }
   }
-  recalc();
+
+  console.warn(`No elevation data available for waypoint ${idx}`);
+  st.elevations[idx]=undefined;
+  rebuildRoute(true);
 }
 
-// ─── TAB / UI ──────────────────────────────────────────────────────────────
-function switchTab(tab) {
-  st.addTab = tab;
-  ['seg','cur'].forEach(t => {
-    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
-    document.getElementById('add-'+t+'-form').style.display = t === tab ? 'block' : 'none';
+// ─── WEGPUNKTE ──────────────────────────────────────────────────────────────
+function addWaypoint(latlng,preserveMu){
+  const idx=st.waypoints.length;
+  const m=L.marker(latlng,{draggable:true,icon:mkIcon(idx+1)}).addTo(map);
+  m.on('dragend',()=>{
+    const i=st.markers.indexOf(m);
+    st.waypoints[i]=m.getLatLng();
+    st.elevations[i]=null;
+    rebuildRoute(true);
+    fetchElevation(i);
   });
-}
-function switchVizTab(tab) {
-  st.vizTab = tab;
-  ['route','force'].forEach(t => {
-    document.getElementById('vtab-'+t).classList.toggle('active', t === tab);
-  });
-  document.getElementById('route-svg-wrap').style.display = tab === 'route' ? 'block' : 'none';
-  document.getElementById('force-chart-wrap').style.display = tab === 'force' ? 'block' : 'none';
-  renderViz();
-}
-function updateCurveFactorPreview() {
-  const sel = document.getElementById('cur-angle');
-  const ang = sel.value === 'custom'
-    ? parseFloat(document.getElementById('cur-custom-angle').value) || 90
-    : parseFloat(sel.value);
-  const mu = parseFloat(document.getElementById('cur-mu').value) || 0.25;
-  document.getElementById('curve-factor-preview').textContent = curveFactorForAngle(ang, mu).toFixed(3).replace('.',',');
+  st.waypoints.push(latlng);
+  st.elevations.push(null);
+  st.markers.push(m);
+  fetchElevation(idx);
+  rebuildRoute(preserveMu||false);
 }
 
-// ─── ROUTE BUILDER ─────────────────────────────────────────────────────────
-function addSegment() {
-  const len = parseFloat(document.getElementById('seg-length').value);
-  if (!len || len <= 0) return;
-  const label = document.getElementById('seg-label').value.trim();
-  const mu = parseFloat(document.getElementById('seg-mu').value) || 0.3;
-  st.route.push({ type: 'seg', len, label, mu });
-  document.getElementById('seg-label').value = '';
-  recalc();
-}
-function addCurve() {
-  const sel = document.getElementById('cur-angle');
-  const angle = sel.value === 'custom'
-    ? parseFloat(document.getElementById('cur-custom-angle').value) || 90
-    : parseFloat(sel.value);
-  const dir = document.getElementById('cur-dir').value;
-  const mu = parseFloat(document.getElementById('cur-mu').value) || 0.25;
-  st.route.push({ type: 'cur', angle, dir, mu });
-  recalc();
-}
-function updateItemMu(idx, val) {
-  const mu = parseFloat(val);
-  if (mu > 0 && idx >= 0 && idx < st.route.length) { st.route[idx].mu = mu; recalc(); }
-}
-function setItemMu(idx, val) {
-  st.route[idx].mu = val; recalc();
-}
-function deleteItem(idx) {
-  st.route.splice(idx, 1);
-  recalc();
-}
-function clearRoute() {
-  st.route = [];
-  recalc();
+function undoLastPoint(){
+  if(!st.waypoints.length) return;
+  map.removeLayer(st.markers.pop());
+  st.waypoints.pop(); st.elevations.pop();
+  rebuildRoute(false);
 }
 
-// ─── EXAMPLE ROUTES ────────────────────────────────────────────────────────
-function loadExample(name) {
-  if (name === 'kusel') {
-    document.getElementById('cable-select').value = 'na2xs_3x150';
-    onCableChange();
-    st.route = [
-      { type:'seg', len:70,  label:'Startbereich', mu:0.50 },
-      { type:'cur', angle:90, dir:'right',          mu:0.259 },
-      { type:'seg', len:160, label:'Mittelteil',    mu:0.50 },
-      { type:'cur', angle:45, dir:'left',           mu:0.259 },
-      { type:'seg', len:190, label:'Endstrecke',    mu:0.50 },
-    ];
-  } else if (name === 'luwihafen') {
-    document.getElementById('cable-select').value = 'nayy_4x185';
-    onCableChange();
-    st.route = [
-      { type:'seg', len:500, label:'Haupttrasse', mu:0.10 },
-      { type:'cur', angle:17, dir:'right',        mu:0.259 },
-    ];
+function clearAll(){
+  st.markers.forEach(m=>map.removeLayer(m));
+  st.markers=[]; st.waypoints=[]; st.elevations=[];
+  if(st.polyline){map.removeLayer(st.polyline);st.polyline=null;}
+  st.colorSegs.forEach(l=>map.removeLayer(l)); st.colorSegs=[];
+  st.route=[]; render();
+}
+
+// ─── GEOMETRIE ──────────────────────────────────────────────────────────────
+function bearing(p1,p2){
+  const r=Math.PI/180,la1=p1.lat*r,la2=p2.lat*r,dl=(p2.lng-p1.lng)*r;
+  return Math.atan2(Math.sin(dl)*Math.cos(la2),Math.cos(la1)*Math.sin(la2)-Math.sin(la1)*Math.cos(la2)*Math.cos(dl))*180/Math.PI;
+}
+function curveFromBearings(b1,b2){
+  let d=b2-b1; while(d>180)d-=360; while(d<-180)d+=360;
+  return {angle:Math.max(1,Math.round(Math.abs(d))),dir:d>=0?'right':'left'};
+}
+
+// ─── ROUTE AUFBAUEN ─────────────────────────────────────────────────────────
+function rebuildRoute(preserveMu){
+  const old=preserveMu?[...st.route]:[];
+  if(st.polyline){map.removeLayer(st.polyline);st.polyline=null;}
+  if(st.waypoints.length>=2)
+    st.polyline=L.polyline(st.waypoints,{color:'#388bfd',weight:2,dashArray:'6,4',opacity:.6}).addTo(map);
+  st.markers.forEach((m,i)=>m.setIcon(mkIcon(i+1)));
+  st.route=[];
+  const n=st.waypoints.length;
+  for(let i=0;i<n-1;i++){
+    const dist=Math.round(map.distance(st.waypoints[i],st.waypoints[i+1]));
+    const si=i*2;
+    const e1=st.elevations[i], e2=st.elevations[i+1];
+    const elevOK=typeof e1==='number'&&typeof e2==='number';
+    const dH=elevOK?Math.round((e2-e1)*10)/10:null;
+    const slopeRad=(elevOK&&dist>0)?Math.atan(dH/dist):null;
+    const slopePct=(elevOK&&dist>0)?(dH/dist*100):null;
+    const elevLoading=(e1===null||e2===null);
+    st.route.push({type:'seg',len:dist,label:`Abschnitt ${i+1}`,
+      mu:preserveMu&&old[si]?old[si].mu:defSegMu(),
+      dH,slopeRad,slopePct,elevLoading,elevStart:e1,elevEnd:e2});
+    if(i<n-2){
+      const {angle,dir}=curveFromBearings(bearing(st.waypoints[i],st.waypoints[i+1]),bearing(st.waypoints[i+1],st.waypoints[i+2]));
+      const ci=i*2+1;
+      st.route.push({type:'cur',angle,dir,mu:preserveMu&&old[ci]?old[ci].mu:defCurMu()});
+    }
   }
-  recalc();
+  render();
 }
 
-// ─── CALCULATION ───────────────────────────────────────────────────────────
-function calculate() {
-  if (!st.cable) return null;
-  const c = st.cable;
-  const inputLen = parseFloat(document.getElementById('cable-length').value);
-  const cableLen = inputLen > 0 ? inputLen : c.drumL;
-  const drumW = cableLen * c.gw;
-  const rollRW = c.gw; // Rollwiderstand = Kabelgewicht, fix
-  const startF = drumW * 0.05;
+// ─── BERECHNUNG ─────────────────────────────────────────────────────────────
+function cfAngle(deg,mu){return Math.exp((mu||.25)*deg*Math.PI/180);}
 
-  const steps = [];
-  steps.push({ label: 'Anzugskraft (Start)', type: 'start', force: startF,
-    info: `5 % × ${fmt(Math.round(drumW))} kg = 5 % × (${fmt(cableLen)} m × ${c.gw} kg/m)` });
+function calculate(){
+  if(!st.cable||!st.route.length) return null;
+  const c=st.cable;
+  const inputLen=parseFloat(document.getElementById('cable-length').value);
+  const cLen=inputLen>0?inputLen:c.drumL;
+  const drumW=cLen*c.gw;
+  const rollRW=c.gw;
+  const startF=drumW*0.05;
+  const steps=[{label:'Anzugskraft (Start)',type:'start',force:startF,
+    info:`5 % × ${fmt(Math.round(drumW))} kg = 5 % × (${fmt(cLen)} m × ${c.gw} kg/m)`}];
+  let F=startF,totalLen=0,totalAscent=0,totalDescent=0;
 
-  let F = startF;
-  let totalLen = 0;
-
-  st.route.forEach((item, i) => {
-    if (item.type === 'seg') {
-      const mu = item.mu || 0.3;
-      const prev = F;
-      const forceAdd = item.len * rollRW * mu;
-      F += forceAdd;
-      totalLen += item.len;
-      steps.push({
-        label: item.label || `Strecke ${fmt(item.len)} m`,
-        type: 'seg', len: item.len, force: F, prevForce: prev,
-        info: `${fmt(item.len)} m × ${rollRW.toFixed(2)} kg/m × μ ${mu.toFixed(2)} = +${fmt(Math.round(forceAdd))} kg`
-      });
-    } else if (item.type === 'cur') {
-      const mu = item.mu || 0.25;
-      const prev = F;
-      const factor = curveFactorForAngle(item.angle, mu);
-      F = F * factor;
-      steps.push({
-        label: `Kurve ${item.angle}° ${item.dir === 'right' ? '↱' : '↰'}`,
-        type: 'cur', angle: item.angle, force: F, prevForce: prev,
-        info: `× e^(${mu.toFixed(2)} × ${item.angle}° × π/180) = ×${factor.toFixed(3).replace('.',',')}`
-      });
+  st.route.forEach(item=>{
+    if(item.type==='seg'){
+      const mu=item.mu||.3;
+      const frictionAdd=item.len*rollRW*mu;
+      const gravAdd=(item.slopeRad!=null)?c.gw*item.len*Math.sin(item.slopeRad):0;
+      F+=frictionAdd+gravAdd; totalLen+=item.len;
+      if(item.dH!=null){item.dH>0?totalAscent+=item.dH:totalDescent+=Math.abs(item.dH);}
+      let info=`${fmt(item.len)} m × ${rollRW.toFixed(2)} kg/m × μ ${mu.toFixed(2)} = +${fmt(Math.round(frictionAdd))} kg`;
+      if(gravAdd!==0) info+=` | Steigung: ${gravAdd>=0?'+':''}${fmt(Math.round(gravAdd))} kg`;
+      steps.push({label:item.label,type:'seg',len:item.len,force:F,info,frictionAdd,gravAdd,slopePct:item.slopePct,dH:item.dH});
+    } else {
+      const mu=item.mu||.25,factor=cfAngle(item.angle,mu);
+      F*=factor;
+      steps.push({label:`Kurve ${item.angle}° ${item.dir==='right'?'↱':'↰'}`,type:'cur',force:F,
+        info:`× e^(${mu.toFixed(2)} × ${item.angle}° × π/180) = ×${factor.toFixed(3).replace('.',',')}`,gravAdd:0});
     }
   });
-
-  return { steps, rollRW, startF, drumW, totalLen, cableMax: c.fMax, maxForce: F };
+  return {steps,rollRW,startF,drumW,totalLen,cableMax:c.fMax,maxForce:F,totalAscent,totalDescent};
 }
 
-// ─── RENDER ROUTE LIST ─────────────────────────────────────────────────────
-function renderRouteList(result) {
-  const el = document.getElementById('route-list');
-  if (!st.route.length) {
-    el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:16px;font-size:12px;">Noch keine Trassenelemente — oben hinzufügen.</div>';
-    return;
-  }
-  const max = result ? result.cableMax : 1;
-  el.innerHTML = st.route.map((item, i) => {
-    const step = result ? result.steps[i + 1] : null;
-    const F = step ? step.force : null;
-    const cls = F ? forceClass(F, max) : '';
-    const forceStr = F ? `<span class="${cls}">${fmt(Math.round(F))} kg</span>` : '';
+const fmt=n=>Number(n).toLocaleString('de-DE');
+const fCls=(f,max)=>{const p=f/max;return p>=1?'force-danger':p>=.8?'force-warn':'force-ok';};
+const fCol=(f,max)=>{const p=f/max;return p>=1?'#f85149':p>=.8?'#d29922':'#3fb950';};
 
-    if (item.type === 'seg') {
-      const mu = item.mu || 0.3;
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function recalc(){render();}
+function render(){
+  const res=calculate();
+  document.getElementById('pt-count').textContent=st.waypoints.length+' Punkt'+(st.waypoints.length!==1?'e':'');
+  renderRouteStats(); renderRouteList(res); renderMachines(res);
+  renderTable(res); renderSummary(res); renderViz(res); updateColorSegs(res);
+}
+
+function renderRouteStats(){
+  const n=st.waypoints.length,el=document.getElementById('route-stats');
+  if(n<2){el.textContent='';return;}
+  const segs=st.route.filter(r=>r.type==='seg');
+  const totalLen=segs.reduce((a,r)=>a+r.len,0);
+  el.textContent=`${n} Pkt · ${segs.length} Str. · ${st.route.filter(r=>r.type==='cur').length} Kurv. · ${fmt(totalLen)} m`;
+}
+
+function renderRouteList(res){
+  const el=document.getElementById('route-list');
+  if(!st.route.length){el.innerHTML='<div class="empty-state" style="padding:14px">Punkte auf der Karte setzen →</div>';return;}
+  const max=res?res.cableMax:1;
+  el.innerHTML=st.route.map((item,i)=>{
+    const step=res?res.steps[i+1]:null,F=step?step.force:null;
+    const cls=F?fCls(F,max):'',fs=F?`<span class="${cls}">${fmt(Math.round(F))} kg</span>`:'';
+    if(item.type==='seg'){
+      const mu=item.mu||.3;
+      let elevHtml='';
+      if(item.elevLoading) elevHtml='<span class="elev-loading">⏳ Höhe lädt…</span>';
+      else if(item.dH!=null){
+        const sign=item.dH>=0?'↑':'↓';
+        const cls2=Math.abs(item.slopePct)<0.3?'elev-flat':item.dH>=0?'elev-up':'elev-down';
+        elevHtml=`<span class="elev-tag ${cls2}">${sign} ${item.dH>=0?'+':''}${item.dH.toFixed(1)} m (${item.slopePct>=0?'+':''}${item.slopePct.toFixed(1)} %)</span>`;
+      }
       return `<div class="route-item">
         <span class="ri-icon">📏</span>
         <div class="ri-body">
-          <div class="ri-main">${item.label || 'Strecke'} — ${fmt(item.len)} m</div>
-          <div class="ri-sub" style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap;">
-            <span>μ =</span>
-            <input type="number" class="mu-inline" value="${mu.toFixed(2)}" step="0.05" min="0.01" max="2"
-                   onchange="updateItemMu(${i}, this.value)">
-            <span class="mu-quick">
-              <span onclick="setItemMu(${i},0.10)">0,10</span>
-              <span onclick="setItemMu(${i},0.30)">0,30</span>
-              <span onclick="setItemMu(${i},0.50)">0,50</span>
-            </span>
-            ${step ? `<span style="color:var(--text3);font-size:10px;">${step.info}</span>` : ''}
+          <div class="ri-main">${item.label} — ${fmt(item.len)} m</div>
+          <div class="ri-sub">μ=<input type="number" class="mu-inline" value="${mu.toFixed(2)}" step="0.05" min="0.01" max="2" onchange="setMu(${i},+this.value)">
+            <span class="mu-quick"><span onclick="setMu(${i},.10)">0,10</span><span onclick="setMu(${i},.30)">0,30</span><span onclick="setMu(${i},.50)">0,50</span></span>
+            ${elevHtml}
+            ${step?`<span style="color:var(--text3);font-size:10px">${step.info}</span>`:''}
           </div>
         </div>
-        <span class="ri-force">${forceStr}</span>
-        <button class="ri-del" onclick="deleteItem(${i})">×</button>
-      </div>`;
+        <span class="ri-force">${fs}</span></div>`;
     } else {
-      const mu = item.mu || 0.25;
-      const factor = curveFactorForAngle(item.angle, mu);
-      const sym = item.dir === 'right' ? '↱' : '↰';
+      const mu=item.mu||.25,factor=cfAngle(item.angle,mu);
       return `<div class="route-item">
-        <span class="ri-icon">${sym}</span>
+        <span class="ri-icon">${item.dir==='right'?'↱':'↰'}</span>
         <div class="ri-body">
-          <div class="ri-main">Kurve ${item.angle}° ${item.dir === 'right' ? 'rechts' : 'links'}</div>
-          <div class="ri-sub" style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap;">
-            <span>μ =</span>
-            <input type="number" class="mu-inline" value="${mu.toFixed(2)}" step="0.05" min="0.01" max="1"
-                   onchange="updateItemMu(${i}, this.value)">
-            <span class="mu-quick">
-              <span onclick="setItemMu(${i},0.15)">0,15</span>
-              <span onclick="setItemMu(${i},0.25)">0,25</span>
-              <span onclick="setItemMu(${i},0.35)">0,35</span>
-            </span>
-            <span style="color:var(--accent);font-size:11px;font-weight:700;">→ ×${factor.toFixed(3).replace('.',',')}</span>
+          <div class="ri-main">Kurve ${item.angle}° ${item.dir==='right'?'rechts':'links'}</div>
+          <div class="ri-sub">μ=<input type="number" class="mu-inline" value="${mu.toFixed(2)}" step="0.05" min="0.01" max="1" onchange="setMu(${i},+this.value)">
+            <span class="mu-quick"><span onclick="setMu(${i},.15)">0,15</span><span onclick="setMu(${i},.25)">0,25</span><span onclick="setMu(${i},.35)">0,35</span></span>
+            <span style="color:var(--accent);font-size:11px;font-weight:700">→ ×${factor.toFixed(3).replace('.',',')}</span>
           </div>
         </div>
-        <span class="ri-force">${forceStr}</span>
-        <button class="ri-del" onclick="deleteItem(${i})">×</button>
-      </div>`;
+        <span class="ri-force">${fs}</span></div>`;
     }
   }).join('');
 }
 
-// ─── RENDER MACHINES ───────────────────────────────────────────────────────
-function renderMachines() {
-  const grid = document.getElementById('machine-grid');
-  grid.innerHTML = MACHINES.map(m => `
-    <div class="machine-card ${st.machine === m.id ? 'selected' : ''}" onclick="selectMachine('${m.id}')">
-      <div class="mc-name">${m.name}</div>
-      <div class="mc-force">${fmt(m.maxF)} <span style="font-size:13px;color:var(--text2);">kg</span></div>
-      <div class="mc-note">${m.note}</div>
-      <div id="mc-status-${m.id}" class="mc-status"></div>
-    </div>`).join('');
-}
-function selectMachine(id) {
-  st.machine = id;
-  renderMachines();
-  recalc();
-}
-function updateMachineStatus(result) {
-  MACHINES.forEach(m => {
-    const el = document.getElementById('mc-status-'+m.id);
-    if (!el) return;
-    if (!result) { el.textContent = ''; return; }
-    const ok = result.maxForce <= m.maxF;
-    const pct = Math.round(result.maxForce / m.maxF * 100);
-    el.textContent = ok ? `✓ OK (${pct}%)` : `✗ Überlast (${pct}%)`;
-    el.className = 'mc-status ' + (ok ? 'status-ok' : 'status-err');
-    if (m.rope && result.totalLen > 300) {
-      el.textContent += ' · Seil prüfen!';
-    }
-  });
-}
-
-// ─── RENDER TABLE ──────────────────────────────────────────────────────────
-function renderTable(result) {
-  const wrap = document.getElementById('result-table-wrap');
-  if (!result) { wrap.innerHTML = '<div class="empty-state"><div class="es-text" style="padding:20px;">Noch keine Trasse definiert.</div></div>'; return; }
-  const max = result.cableMax;
-  const rows = result.steps.map(s => {
-    const pct = s.force / max * 100;
-    const cls = forceClass(s.force, max);
-    const barColor = cls === 'force-ok' ? 'var(--accent2)' : cls === 'force-warn' ? 'var(--warn)' : 'var(--danger)';
-    return `<tr>
-      <td>${s.label}</td>
-      <td class="${cls}" style="font-weight:700;">${fmt(Math.round(s.force))} kg</td>
-      <td style="width:160px;">
-        <div>${pct.toFixed(1).replace('.',',')} %</div>
-        <div class="force-bar-wrap"><div class="force-bar" style="width:${Math.min(pct,100)}%;background:${barColor};"></div></div>
-      </td>
-      <td style="color:var(--text2);">${s.info}</td>
-    </tr>`;
+function renderMachines(res){
+  document.getElementById('machine-grid').innerHTML=MACHINES.map(m=>{
+    const ok=res?res.maxForce<=m.maxF:null,pct=res?Math.round(res.maxForce/m.maxF*100):null;
+    const sts=res?`<div class="mc-status ${ok?'status-ok':'status-err'}">${ok?`✓ OK (${pct}%)`:`✗ ${pct}%`}</div>`:'';
+    return `<div class="machine-card ${st.machine===m.id?'selected':''}" onclick="selectMachine('${m.id}')">
+      <div class="mc-name">${m.name}</div><div class="mc-force">${fmt(m.maxF)} <span style="font-size:11px;color:var(--text2)">kg</span></div>
+      <div class="mc-note">${m.note}</div>${sts}</div>`;
   }).join('');
-  wrap.innerHTML = `<table class="result-table">
-    <thead><tr><th>Schritt</th><th>Zugkraft</th><th>Auslastung</th><th>Berechnung</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
 }
 
-// ─── RENDER SUMMARY ────────────────────────────────────────────────────────
-function renderSummary(result) {
-  if (!result) {
-    ['sum-force','sum-limit','sum-pct','sum-len','sum-start','sum-rw'].forEach(id => document.getElementById(id).textContent = '—');
-    document.getElementById('alerts-wrap').innerHTML = '';
-    return;
-  }
-  const pct = result.maxForce / result.cableMax * 100;
-  const cls = forceClass(result.maxForce, result.cableMax);
-  document.getElementById('sum-force').textContent = fmt(Math.round(result.maxForce));
-  document.getElementById('sum-force').className = 'stat-value ' + cls;
-  document.getElementById('sum-limit').textContent = fmt(result.cableMax);
-  document.getElementById('sum-pct').textContent = pct.toFixed(1).replace('.',',') + ' %';
-  document.getElementById('sum-pct').className = 'stat-value ' + cls;
-  document.getElementById('sum-len').textContent = fmt(result.totalLen);
-  document.getElementById('sum-start').textContent = fmt(Math.round(result.startF));
-  document.getElementById('sum-rw').textContent = result.rollRW.toFixed(2).replace('.',',');
-
-  // Alerts
-  const machine = MACHINES.find(m => m.id === st.machine);
-  const alerts = [];
-  if (pct > 100) alerts.push({ cls:'danger', text:`🚨 Zugkraft ${fmt(Math.round(result.maxForce))} kg überschreitet Kabelgrenze von ${fmt(result.cableMax)} kg!` });
-  else if (pct > 80) alerts.push({ cls:'warn', text:`⚠️ Zugkraft bei ${pct.toFixed(0)} % der Kabelgrenze — Puffer prüfen.` });
-  else alerts.push({ cls:'ok', text:`✓ Zugkraft innerhalb der Kabelgrenze (${pct.toFixed(0)} % ausgelastet).` });
-  if (machine) {
-    const mOk = result.maxForce <= machine.maxF;
-    const mPct = Math.round(result.maxForce / machine.maxF * 100);
-    if (!mOk) alerts.push({ cls:'danger', text:`🚨 Maschine "${machine.name}" zu schwach! ${fmt(Math.round(result.maxForce))} kg > ${fmt(machine.maxF)} kg.` });
-    else alerts.push({ cls:'ok', text:`✓ Maschine "${machine.name}" ausreichend (${mPct} % ausgelastet).` });
-    if (machine.rope && result.totalLen > 300) {
-      alerts.push({ cls:'warn', text:`⚠️ Gesamtlänge ${fmt(result.totalLen)} m > Seillänge 300 m — Seil prüfen!` });
-    }
-  }
-  document.getElementById('alerts-wrap').innerHTML = alerts.map(a =>
-    `<div class="alert alert-${a.cls}">${a.text}</div>`).join('');
+function renderTable(res){
+  const wrap=document.getElementById('result-table-wrap');
+  if(!res){wrap.innerHTML='<div class="empty-state">Kabel wählen und Punkte auf der Karte setzen.</div>';return;}
+  const max=res.cableMax;
+  wrap.innerHTML=`<table class="result-table"><thead><tr><th>Schritt</th><th>Zugkraft</th><th>Auslastung</th><th>Berechnung</th></tr></thead><tbody>
+    ${res.steps.map(s=>{
+      const pct=s.force/max*100,cls=fCls(s.force,max);
+      const bc=cls==='force-ok'?'var(--accent2)':cls==='force-warn'?'var(--warn)':'var(--danger)';
+      return `<tr><td>${s.label}</td><td class="${cls}" style="font-weight:700">${fmt(Math.round(s.force))} kg</td>
+        <td style="width:130px"><div>${pct.toFixed(1).replace('.',',')} %</div>
+          <div class="force-bar-wrap"><div class="force-bar" style="width:${Math.min(pct,100)}%;background:${bc}"></div></div></td>
+        <td style="color:var(--text2);font-size:11px">${s.info}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
-// ─── VISUALIZE: ROUTE (SVG) ────────────────────────────────────────────────
-function renderRouteViz(result) {
-  const wrap = document.getElementById('route-svg-wrap');
-  if (!result || result.steps.length <= 1) {
-    wrap.innerHTML = '<div class="empty-state"><div class="es-icon">📐</div><div class="es-text">Kabel wählen und Trasse anlegen</div></div>';
-    return;
+function renderSummary(res){
+  if(!res){
+    ['sum-force','sum-limit','sum-pct','sum-len','sum-ascent','sum-descent'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('alerts-wrap').innerHTML='';return;
   }
+  const pct=res.maxForce/res.cableMax*100,cls=fCls(res.maxForce,res.cableMax);
+  document.getElementById('sum-force').textContent=fmt(Math.round(res.maxForce));
+  document.getElementById('sum-force').className='stat-value '+cls;
+  document.getElementById('sum-limit').textContent=fmt(res.cableMax);
+  document.getElementById('sum-pct').textContent=pct.toFixed(1).replace('.',',');
+  document.getElementById('sum-pct').className='stat-value '+cls;
+  document.getElementById('sum-len').textContent=fmt(res.totalLen);
+  document.getElementById('sum-ascent').textContent=res.totalAscent>0?Math.round(res.totalAscent)+'':'—';
+  document.getElementById('sum-descent').textContent=res.totalDescent>0?Math.round(res.totalDescent)+'':'—';
+  const mach=MACHINES.find(m=>m.id===st.machine);
+  const alerts=[];
+  if(pct>100) alerts.push({t:'danger',m:`🚨 Zugkraft ${fmt(Math.round(res.maxForce))} kg > Kabelgrenze ${fmt(res.cableMax)} kg!`});
+  else if(pct>80) alerts.push({t:'warn',m:`⚠️ Zugkraft bei ${pct.toFixed(0)} % der Kabelgrenze.`});
+  else alerts.push({t:'ok',m:`✓ Innerhalb Kabelgrenze (${pct.toFixed(0)} % ausgelastet).`});
+  if(mach){
+    const ok2=res.maxForce<=mach.maxF,mp=Math.round(res.maxForce/mach.maxF*100);
+    alerts.push(ok2?{t:'ok',m:`✓ Maschine ausreichend (${mp} % ausgelastet).`}:{t:'danger',m:`🚨 Maschine zu schwach! ${fmt(Math.round(res.maxForce))} kg > ${fmt(mach.maxF)} kg.`});
+    if(res.totalLen>300) alerts.push({t:'warn',m:`⚠️ Trasse ${fmt(res.totalLen)} m > Seil 300 m.`});
+  }
+  document.getElementById('alerts-wrap').innerHTML=alerts.map(a=>`<div class="alert alert-${a.t}">${a.m}</div>`).join('');
+}
 
-  const NODE_R = 20;
-  // PAD: top, right, bottom, left — bottom bigger for force-labels below nodes
-  const PT = 30, PR = 80, PB = 50, PL = 30;
+// ─── VISUALISIERUNG ─────────────────────────────────────────────────────────
+function switchViz(tab){
+  st.vizTab=tab;
+  ['route','force','elev'].forEach(t=>{
+    document.getElementById('vtab-'+t).classList.toggle('active',t===tab);
+  });
+  document.getElementById('route-svg-wrap').style.display=tab==='route'?'block':'none';
+  document.getElementById('force-chart-wrap').style.display=tab==='force'?'block':'none';
+  document.getElementById('elev-profile-wrap').style.display=tab==='elev'?'block':'none';
+  renderViz(calculate());
+}
+function renderViz(res){
+  if(st.vizTab==='route') renderRouteViz(res);
+  else if(st.vizTab==='force') renderForceChart(res);
+  else renderElevProfile();
+}
 
-  // Build world-coordinate geometry (in meters)
-  let wx = 0, wy = 0, dir = 0; // dir in degrees, 0=right
-  const nodes = []; // {wx, wy, force, curves:[{angle,dir}], isLast}
-  const segs  = []; // {wx1,wy1, wx2,wy2, len, label}
-
-  nodes.push({ wx: 0, wy: 0, force: result.steps[0].force, curves: [], isStart: true });
-
-  let stepIdx = 1;
-  st.route.forEach(item => {
-    const step = stepIdx < result.steps.length ? result.steps[stepIdx] : null;
-    if (item.type === 'seg') {
-      const rad = dir * Math.PI / 180;
-      const nwx = wx + Math.cos(rad) * item.len;
-      const nwy = wy + Math.sin(rad) * item.len;
-      segs.push({ wx1: wx, wy1: wy, wx2: nwx, wy2: nwy, len: item.len, label: item.label });
-      wx = nwx; wy = nwy;
-      nodes.push({ wx, wy, force: step ? step.force : nodes[nodes.length-1].force, curves: [] });
-      stepIdx++;
-    } else if (item.type === 'cur') {
-      const delta = item.dir === 'right' ? item.angle : -item.angle;
-      dir = (dir + delta + 360) % 360;
-      nodes[nodes.length-1].curves.push({ angle: item.angle, dir: item.dir });
-      if (step) nodes[nodes.length-1].force = step.force;
-      stepIdx++;
+function renderRouteViz(res){
+  const wrap=document.getElementById('route-svg-wrap');
+  if(!res||res.steps.length<=1){wrap.innerHTML='<div class="empty-state">Punkte auf der Karte setzen.</div>';return;}
+  const PT=28,PR=80,PB=48,PL=28,NR=18;
+  let wx=0,wy=0,dir=0;
+  const nodes=[],segs=[];
+  nodes.push({wx:0,wy:0,force:res.steps[0].force,curves:[],isStart:true});
+  let si=1;
+  st.route.forEach(item=>{
+    const step=si<res.steps.length?res.steps[si]:null;
+    if(item.type==='seg'){
+      const rad=dir*Math.PI/180,nwx=wx+Math.cos(rad)*item.len,nwy=wy+Math.sin(rad)*item.len;
+      segs.push({wx1:wx,wy1:wy,wx2:nwx,wy2:nwy,len:item.len,label:item.label});
+      wx=nwx;wy=nwy;
+      nodes.push({wx,wy,force:step?step.force:nodes[nodes.length-1].force,curves:[]});si++;
+    } else {
+      dir=(dir+(item.dir==='right'?item.angle:-item.angle)+360)%360;
+      nodes[nodes.length-1].curves.push({angle:item.angle,dir:item.dir});
+      if(step) nodes[nodes.length-1].force=step.force;si++;
     }
   });
-  nodes[nodes.length - 1].isEnd = true;
-
-  // Bounds of world coordinates
-  const allWX = [...nodes.map(n => n.wx), ...segs.flatMap(s => [s.wx1, s.wx2])];
-  const allWY = [...nodes.map(n => n.wy), ...segs.flatMap(s => [s.wy1, s.wy2])];
-  const minWX = Math.min(...allWX), maxWX = Math.max(...allWX);
-  const minWY = Math.min(...allWY), maxWY = Math.max(...allWY);
-  const spanX = maxWX - minWX || 1;
-  const spanY = maxWY - minWY || 1;
-
-  // Scale to fit viewport
-  const wrapW = Math.max(wrap.clientWidth - 4, 400);
-  const availW = wrapW - PL - PR;
-  const availH = 240;
-
-  // Choose scale: fit both axes, don't go below 0.3 px/m
-  let scale;
-  if (spanX / spanY > availW / availH) {
-    scale = availW / spanX;
-  } else {
-    scale = availH / spanY;
-  }
-  scale = Math.max(0.3, Math.min(scale, 4));
-
-  const svgW = spanX * scale + PL + PR;
-  const svgH = Math.max(spanY * scale + PT + PB, 130);
-
-  // World → SVG coordinate transform
-  const tx = (wv, base, span) => (wv - base) * scale;
-  const sx = wv => PL + tx(wv, minWX, spanX);
-  const sy = wy => PT + tx(wy, minWY, spanY);
-
-  // Force color
-  const maxF = result.cableMax;
-  const fCol = f => f / maxF >= 1 ? '#f85149' : f / maxF >= 0.8 ? '#d29922' : '#3fb950';
-
-  const p = [];
+  nodes[nodes.length-1].isEnd=true;
+  const aX=[...nodes.map(n=>n.wx),...segs.flatMap(s=>[s.wx1,s.wx2])];
+  const aY=[...nodes.map(n=>n.wy),...segs.flatMap(s=>[s.wy1,s.wy2])];
+  const minX=Math.min(...aX),maxX=Math.max(...aX),minY=Math.min(...aY),maxY=Math.max(...aY);
+  const spanX=maxX-minX||1,spanY=maxY-minY||1;
+  const wW=Math.max(wrap.clientWidth-4,300),avW=wW-PL-PR,avH=200;
+  let sc=spanX/spanY>avW/avH?avW/spanX:avH/spanY;
+  sc=Math.max(.3,Math.min(sc,4));
+  const svgW=spanX*sc+PL+PR,svgH=Math.max(spanY*sc+PT+PB,120);
+  const sx=w=>PL+(w-minX)*sc,sy=w=>PT+(w-minY)*sc,max=res.cableMax;
+  const p=[];
   p.push(`<svg viewBox="0 0 ${svgW.toFixed(0)} ${svgH.toFixed(0)}" width="${svgW.toFixed(0)}" height="${svgH.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#161b22;border-radius:6px;display:block;">`);
-  p.push(`<defs><pattern id="g2" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0L0 0 0 40" fill="none" stroke="#21262d" stroke-width="1"/></pattern></defs>`);
-  p.push(`<rect width="${svgW.toFixed(0)}" height="${svgH.toFixed(0)}" fill="url(#g2)"/>`);
-
-  // Draw segments
-  segs.forEach(s => {
-    const x1 = sx(s.wx1), y1 = sy(s.wy1), x2 = sx(s.wx2), y2 = sy(s.wy2);
+  p.push(`<defs><pattern id="gp" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0L0 0 0 40" fill="none" stroke="#21262d" stroke-width="1"/></pattern></defs>`);
+  p.push(`<rect width="${svgW.toFixed(0)}" height="${svgH.toFixed(0)}" fill="url(#gp)"/>`);
+  segs.forEach(s=>{
+    const x1=sx(s.wx1),y1=sy(s.wy1),x2=sx(s.wx2),y2=sy(s.wy2);
     p.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#388bfd" stroke-width="3" stroke-linecap="round"/>`);
-    // Arrowhead at end
-    const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx*dx + dy*dy) || 1;
-    const ux = dx/len, uy = dy/len;
-    const ax = x2 - ux*12 - uy*5, ay = y2 - uy*12 + ux*5;
-    const bx = x2 - ux*12 + uy*5, by = y2 - uy*12 - ux*5;
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy)||1,ux=dx/len,uy=dy/len;
+    const ax=x2-ux*10-uy*4,ay=y2-uy*10+ux*4,bx=x2-ux*10+uy*4,by=y2-uy*10-ux*4;
     p.push(`<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${ax.toFixed(1)},${ay.toFixed(1)} ${bx.toFixed(1)},${by.toFixed(1)}" fill="#388bfd"/>`);
-    // Length label perpendicular to segment
-    const mx = (x1+x2)/2, my = (y1+y2)/2;
-    const ox = (-uy) * 16, oy = ux * 16;
-    const lx = (mx + ox).toFixed(1), ly = (my + oy).toFixed(1);
-    const label = s.label ? `${s.label} (${fmt(s.len)}m)` : `${fmt(s.len)} m`;
-    const lw = label.length * 6.5 + 10;
-    p.push(`<rect x="${(parseFloat(lx)-lw/2).toFixed(1)}" y="${(parseFloat(ly)-9).toFixed(1)}" width="${lw.toFixed(0)}" height="17" rx="4" fill="#21262d" stroke="#388bfd" stroke-width="1" opacity="0.92"/>`);
-    p.push(`<text x="${lx}" y="${(parseFloat(ly)+4).toFixed(1)}" text-anchor="middle" fill="#7dc8ff" font-size="11" font-family="monospace">${label}</text>`);
+    const mx=(x1+x2)/2,my=(y1+y2)/2,ox=(-uy)*15,oy=ux*15,lx=(mx+ox).toFixed(1),ly=(my+oy).toFixed(1);
+    const lbl=s.label?`${s.label} (${fmt(s.len)}m)`:`${fmt(s.len)} m`,lw=lbl.length*6+10;
+    p.push(`<rect x="${(parseFloat(lx)-lw/2).toFixed(1)}" y="${(parseFloat(ly)-9).toFixed(1)}" width="${lw.toFixed(0)}" height="17" rx="4" fill="#21262d" stroke="#388bfd" stroke-width="1" opacity=".9"/>`);
+    p.push(`<text x="${lx}" y="${(parseFloat(ly)+4).toFixed(1)}" text-anchor="middle" fill="#7dc8ff" font-size="11" font-family="monospace">${lbl}</text>`);
   });
-
-  // Draw nodes
-  nodes.forEach((n, i) => {
-    const cx = sx(n.wx).toFixed(1), cy = sy(n.wy).toFixed(1);
-    const col = n.isStart ? '#388bfd' : fCol(n.force);
-
-    // Glow ring if warn/danger
-    if (!n.isStart && n.force / maxF >= 0.8) {
-      const rc = n.force / maxF >= 1 ? '#f85149' : '#d29922';
-      p.push(`<circle cx="${cx}" cy="${cy}" r="${NODE_R+5}" fill="none" stroke="${rc}" stroke-width="1.5" opacity="0.4"/>`);
-    }
-
-    p.push(`<circle cx="${cx}" cy="${cy}" r="${NODE_R}" fill="${col}" stroke="#0d1117" stroke-width="2.5" opacity="0.95"/>`);
-
-    // Icon
-    const icon = n.isStart ? '▶' : n.isEnd ? '■' : (n.curves.length ? (n.curves[0].dir === 'right' ? '↱' : '↰') : '●');
-    p.push(`<text x="${cx}" y="${(parseFloat(cy)+5).toFixed(1)}" text-anchor="middle" fill="#0d1117" font-size="15" font-weight="bold">${icon}</text>`);
-
-    // Curve angle badge
-    if (n.curves.length) {
-      const badgeX = (parseFloat(cx) + NODE_R + 3).toFixed(1);
-      const badgeY = (parseFloat(cy) - NODE_R - 2).toFixed(1);
-      const ct = n.curves.map(c => `${c.angle}°`).join('+');
-      p.push(`<text x="${badgeX}" y="${badgeY}" fill="#f0c040" font-size="11" font-weight="700">${ct}</text>`);
-    }
-
-    // Force label below node
-    const fy = (parseFloat(cy) + NODE_R + 15).toFixed(1);
-    const forceText = `${fmt(Math.round(n.force))} kg`;
-    const fw = forceText.length * 7 + 8;
-    p.push(`<rect x="${(parseFloat(cx)-fw/2).toFixed(1)}" y="${(parseFloat(fy)-11).toFixed(1)}" width="${fw.toFixed(0)}" height="16" rx="3" fill="#0d1117" opacity="0.88"/>`);
-    p.push(`<text x="${cx}" y="${(parseFloat(fy)+2).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="11" font-weight="700" font-family="monospace">${forceText}</text>`);
+  nodes.forEach((n,i)=>{
+    const cx=sx(n.wx).toFixed(1),cy=sy(n.wy).toFixed(1),col=n.isStart?'#388bfd':fCol(n.force,max);
+    if(!n.isStart&&n.force/max>=.8) p.push(`<circle cx="${cx}" cy="${cy}" r="${NR+5}" fill="none" stroke="${fCol(n.force,max)}" stroke-width="1.5" opacity=".35"/>`);
+    p.push(`<circle cx="${cx}" cy="${cy}" r="${NR}" fill="${col}" stroke="#0d1117" stroke-width="2.5"/>`);
+    const icon=n.isStart?'▶':n.isEnd?'■':(n.curves.length?(n.curves[0].dir==='right'?'↱':'↰'):'●');
+    p.push(`<text x="${cx}" y="${(parseFloat(cy)+5).toFixed(1)}" text-anchor="middle" fill="#0d1117" font-size="14" font-weight="bold">${icon}</text>`);
+    if(n.curves.length) p.push(`<text x="${(parseFloat(cx)+NR+3).toFixed(1)}" y="${(parseFloat(cy)-NR).toFixed(1)}" fill="#f0c040" font-size="11" font-weight="700">${n.curves.map(c=>c.angle+'°').join('+')}</text>`);
+    const fy=(parseFloat(cy)+NR+14).toFixed(1),ft=`${fmt(Math.round(n.force))} kg`,fw=ft.length*7+8;
+    p.push(`<rect x="${(parseFloat(cx)-fw/2).toFixed(1)}" y="${(parseFloat(fy)-11).toFixed(1)}" width="${fw.toFixed(0)}" height="16" rx="3" fill="#0d1117" opacity=".88"/>`);
+    p.push(`<text x="${cx}" y="${(parseFloat(fy)+2).toFixed(1)}" text-anchor="middle" fill="${col}" font-size="11" font-weight="700" font-family="monospace">${ft}</text>`);
   });
-
   p.push('</svg>');
-  wrap.innerHTML = p.join('');
+  wrap.innerHTML=p.join('');
 }
 
-// ─── VISUALIZE: FORCE CHART ────────────────────────────────────────────────
-function renderForceChart(result) {
-  const wrap = document.getElementById('force-chart-wrap');
-  if (!result || result.steps.length <= 1) { wrap.innerHTML = ''; return; }
-
-  const W = Math.max(wrap.clientWidth || 600, 500), H = 240;
-  const PAD = { top:20, right:20, bottom:40, left:70 };
-  const cw = W - PAD.left - PAD.right, ch = H - PAD.top - PAD.bottom;
-  const max = result.cableMax;
-  const maxF = Math.max(...result.steps.map(s => s.force)) * 1.15;
-  const scaleY = ch / maxF;
-
-  // Collect points with x position based on cumulative distance
-  const pts = [];
-  let dist = 0;
-  pts.push({ d: 0, f: result.steps[0].force });
-  let stepIdx = 1;
-  st.route.forEach(item => {
-    if (item.type === 'seg') { dist += item.len; }
-    if (stepIdx < result.steps.length) {
-      pts.push({ d: dist, f: result.steps[stepIdx].force, type: item.type, angle: item.angle });
-      stepIdx++;
-    }
+function renderForceChart(res){
+  const wrap=document.getElementById('force-chart-wrap');
+  if(!res||res.steps.length<=1){wrap.innerHTML='<div class="empty-state">Noch keine Trasse.</div>';return;}
+  const W=Math.max(wrap.clientWidth||500,400),H=200,PAD={top:16,right:20,bottom:36,left:65};
+  const cw=W-PAD.left-PAD.right,ch=H-PAD.top-PAD.bottom;
+  const max=res.cableMax,maxF=Math.max(...res.steps.map(s=>s.force))*1.12;
+  const pts=[];let dist=0;
+  pts.push({d:0,f:res.steps[0].force});
+  let sIdx=1;
+  st.route.forEach(item=>{
+    if(item.type==='seg') dist+=item.len;
+    if(sIdx<res.steps.length){pts.push({d:dist,f:res.steps[sIdx].force,type:item.type});sIdx++;}
   });
+  const totD=dist||1,scX=cw/totD,scY=ch/maxF;
+  const px=d=>PAD.left+d*scX,py=f=>PAD.top+ch-f*scY;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="background:#161b22;">`;
+  for(let i=0;i<=4;i++){const yv=maxF*i/4,yp=py(yv);svg+=`<line x1="${PAD.left}" y1="${yp.toFixed(1)}" x2="${W-PAD.right}" y2="${yp.toFixed(1)}" stroke="#21262d" stroke-width="1"/><text x="${PAD.left-5}" y="${(yp+4).toFixed(1)}" text-anchor="end" fill="#6e7681" font-size="10">${fmt(Math.round(yv))}</text>`;}
+  const ly=py(max);svg+=`<line x1="${PAD.left}" y1="${ly.toFixed(1)}" x2="${W-PAD.right}" y2="${ly.toFixed(1)}" stroke="#f85149" stroke-width="1" stroke-dasharray="4,3"/><text x="${W-PAD.right+3}" y="${(ly+4).toFixed(1)}" fill="#f85149" font-size="10">Max</text>`;
+  let path=`M ${px(pts[0].d).toFixed(1)} ${py(pts[0].f).toFixed(1)}`;
+  for(let i=1;i<pts.length;i++) path+=` L ${px(pts[i].d).toFixed(1)} ${py(pts[i].f).toFixed(1)}`;
+  svg+=`<path d="${path} L ${px(totD).toFixed(1)} ${(PAD.top+ch).toFixed(1)} L ${PAD.left} ${(PAD.top+ch).toFixed(1)} Z" fill="rgba(56,139,253,.08)"/>`;
+  svg+=`<path d="${path}" fill="none" stroke="#388bfd" stroke-width="2"/>`;
+  pts.forEach(pt=>{const col=fCol(pt.f,max);svg+=`<circle cx="${px(pt.d).toFixed(1)}" cy="${py(pt.f).toFixed(1)}" r="5" fill="${col}" stroke="#0d1117" stroke-width="2"/>`;});
+  svg+=`<line x1="${PAD.left}" y1="${(PAD.top+ch).toFixed(1)}" x2="${W-PAD.right}" y2="${(PAD.top+ch).toFixed(1)}" stroke="#30363d"/><text x="${(PAD.left+cw/2).toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#6e7681" font-size="10">Distanz [m]</text>`;
+  for(let i=0;i<=5;i++){const d=totD*i/5;svg+=`<text x="${px(d).toFixed(1)}" y="${(PAD.top+ch+14).toFixed(1)}" text-anchor="middle" fill="#6e7681" font-size="10">${Math.round(d)}</text>`;}
+  svg+='</svg>';
+  wrap.innerHTML=svg;
+}
 
-  const totalDist = dist || 1;
-  const scaleX = cw / totalDist;
+// ─── HÖHENPROFIL ────────────────────────────────────────────────────────────
+function renderElevProfile(){
+  const wrap=document.getElementById('elev-profile-wrap');
+  if(st.waypoints.length<2){wrap.innerHTML='<div class="empty-state">Punkte setzen — Höhendaten werden automatisch geladen.</div>';return;}
+  const elevs=st.elevations;
+  const hasAny=elevs.some(e=>typeof e==='number');
+  const anyLoading=elevs.some(e=>e===null);
+  if(!hasAny&&anyLoading){wrap.innerHTML='<div class="empty-state">⏳ Höhendaten werden geladen…</div>';return;}
+  if(!hasAny){wrap.innerHTML='<div class="empty-state">Keine Höhendaten verfügbar (API nicht erreichbar).</div>';return;}
 
-  const px = d => PAD.left + d * scaleX;
-  const py = f => PAD.top + ch - f * scaleY;
+  const pts=[];
+  let cumDist=0;
+  pts.push({d:0,e:typeof elevs[0]==='number'?elevs[0]:null,idx:0});
+  for(let i=1;i<st.waypoints.length;i++){
+    cumDist+=map.distance(st.waypoints[i-1],st.waypoints[i]);
+    pts.push({d:Math.round(cumDist),e:typeof elevs[i]==='number'?elevs[i]:null,idx:i});
+  }
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="background:#161b22;">`;
+  const W=Math.max(wrap.clientWidth||500,400),H=220;
+  const PAD={top:24,right:24,bottom:40,left:62};
+  const cw=W-PAD.left-PAD.right,ch=H-PAD.top-PAD.bottom;
+  const validElevs=pts.filter(p=>p.e!=null).map(p=>p.e);
+  const minE=Math.min(...validElevs),maxE=Math.max(...validElevs);
+  const eSpan=Math.max(maxE-minE,10),ePad=eSpan*0.18;
+  const eMin=minE-ePad,eMax=maxE+ePad,totD=pts[pts.length-1].d||1;
+  const px=d=>PAD.left+(d/totD)*cw;
+  const py=e=>PAD.top+ch-((e-eMin)/(eMax-eMin))*ch;
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="background:#161b22;border-radius:6px;display:block;">`;
 
   // Grid
-  for (let i = 0; i <= 4; i++) {
-    const yv = maxF * i / 4;
-    const yp = py(yv);
-    svg += `<line x1="${PAD.left}" y1="${yp}" x2="${W-PAD.right}" y2="${yp}" stroke="#21262d" stroke-width="1"/>`;
-    svg += `<text x="${PAD.left-6}" y="${yp+4}" text-anchor="end" fill="#6e7681" font-size="10">${fmt(Math.round(yv))}</text>`;
+  for(let i=0;i<=4;i++){
+    const ev=eMin+(eMax-eMin)*i/4,yp=py(ev);
+    svg+=`<line x1="${PAD.left}" y1="${yp.toFixed(1)}" x2="${W-PAD.right}" y2="${yp.toFixed(1)}" stroke="#21262d" stroke-width="1"/>`;
+    svg+=`<text x="${PAD.left-5}" y="${(yp+4).toFixed(1)}" text-anchor="end" fill="#6e7681" font-size="10">${Math.round(ev)}</text>`;
   }
 
-  // Cable limit line
-  const limitY = py(max);
-  svg += `<line x1="${PAD.left}" y1="${limitY}" x2="${W-PAD.right}" y2="${limitY}" stroke="#f85149" stroke-width="1" stroke-dasharray="4,3"/>`;
-  svg += `<text x="${W-PAD.right+4}" y="${limitY+4}" fill="#f85149" font-size="10">Max</text>`;
+  const validPts=pts.filter(p=>p.e!=null);
+  if(validPts.length>=2){
+    let area=`M ${px(validPts[0].d).toFixed(1)} ${py(validPts[0].e).toFixed(1)}`;
+    for(let i=1;i<validPts.length;i++) area+=` L ${px(validPts[i].d).toFixed(1)} ${py(validPts[i].e).toFixed(1)}`;
+    area+=` L ${px(validPts[validPts.length-1].d).toFixed(1)} ${(PAD.top+ch).toFixed(1)} L ${px(validPts[0].d).toFixed(1)} ${(PAD.top+ch).toFixed(1)} Z`;
+    svg+=`<path d="${area}" fill="rgba(56,139,253,.12)"/>`;
+    let line=`M ${px(validPts[0].d).toFixed(1)} ${py(validPts[0].e).toFixed(1)}`;
+    for(let i=1;i<validPts.length;i++) line+=` L ${px(validPts[i].d).toFixed(1)} ${py(validPts[i].e).toFixed(1)}`;
+    svg+=`<path d="${line}" fill="none" stroke="#388bfd" stroke-width="2.5"/>`;
+  }
 
-  // Area fill
-  let pathD = `M ${px(pts[0].d)} ${py(pts[0].f)}`;
-  for (let i = 1; i < pts.length; i++) pathD += ` L ${px(pts[i].d)} ${py(pts[i].f)}`;
-  pathD += ` L ${px(totalDist)} ${PAD.top+ch} L ${PAD.left} ${PAD.top+ch} Z`;
-  svg += `<path d="${pathD}" fill="rgba(56,139,253,0.08)"/>`;
-
-  // Line
-  let linePath = `M ${px(pts[0].d)} ${py(pts[0].f)}`;
-  for (let i = 1; i < pts.length; i++) linePath += ` L ${px(pts[i].d)} ${py(pts[i].f)}`;
-  svg += `<path d="${linePath}" fill="none" stroke="#388bfd" stroke-width="2"/>`;
-
-  // Dots
-  pts.forEach(p => {
-    const col = p.f > max ? '#f85149' : p.f > max*0.8 ? '#d29922' : '#3fb950';
-    svg += `<circle cx="${px(p.d)}" cy="${py(p.f)}" r="5" fill="${col}" stroke="#0d1117" stroke-width="2"/>`;
+  // Waypoint markers + labels
+  pts.forEach((pt,i)=>{
+    if(pt.e==null) return;
+    const cx=px(pt.d).toFixed(1),cy=py(pt.e).toFixed(1);
+    svg+=`<circle cx="${cx}" cy="${cy}" r="7" fill="#388bfd" stroke="#0d1117" stroke-width="2"/>`;
+    svg+=`<text x="${cx}" y="${(parseFloat(cy)+4).toFixed(1)}" text-anchor="middle" fill="#fff" font-size="8" font-weight="700">${i+1}</text>`;
+    const above=parseFloat(cy)>PAD.top+20;
+    const ly2=(above?parseFloat(cy)-11:parseFloat(cy)+19).toFixed(1);
+    svg+=`<text x="${cx}" y="${ly2}" text-anchor="middle" fill="#7dc8ff" font-size="10" font-weight="600">${Math.round(pt.e)} m</text>`;
   });
 
   // X axis
-  svg += `<line x1="${PAD.left}" y1="${PAD.top+ch}" x2="${W-PAD.right}" y2="${PAD.top+ch}" stroke="#30363d" stroke-width="1"/>`;
-  svg += `<text x="${PAD.left + cw/2}" y="${H-4}" text-anchor="middle" fill="#6e7681" font-size="10">Distanz [m]</text>`;
+  svg+=`<line x1="${PAD.left}" y1="${(PAD.top+ch).toFixed(1)}" x2="${W-PAD.right}" y2="${(PAD.top+ch).toFixed(1)}" stroke="#30363d"/>`;
+  svg+=`<text x="${(PAD.left+cw/2).toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#6e7681" font-size="10">Distanz [m]</text>`;
+  for(let i=0;i<=5;i++){const d=totD*i/5;svg+=`<text x="${px(d).toFixed(1)}" y="${(PAD.top+ch+14).toFixed(1)}" text-anchor="middle" fill="#6e7681" font-size="10">${Math.round(d)}</text>`;}
 
-  // X ticks
-  const steps_x = Math.min(5, pts.length);
-  for (let i = 0; i <= steps_x; i++) {
-    const d = totalDist * i / steps_x;
-    const xp = px(d);
-    svg += `<text x="${xp}" y="${PAD.top+ch+14}" text-anchor="middle" fill="#6e7681" font-size="10">${Math.round(d)}</text>`;
+  // Y axis label
+  svg+=`<text x="11" y="${(PAD.top+ch/2).toFixed(1)}" text-anchor="middle" fill="#6e7681" font-size="10" transform="rotate(-90,11,${(PAD.top+ch/2).toFixed(1)})">Höhe [m ü.NN]</text>`;
+
+  if(anyLoading) svg+=`<text x="${(W/2).toFixed(1)}" y="14" text-anchor="middle" fill="#6e7681" font-size="10">⏳ Restliche Höhendaten werden noch geladen…</text>`;
+
+  svg+='</svg>';
+  wrap.innerHTML=svg;
+}
+
+// ─── KARTE SEGMENTE ─────────────────────────────────────────────────────────
+function updateColorSegs(res){
+  st.colorSegs.forEach(l=>map.removeLayer(l));st.colorSegs=[];
+  if(st.polyline){map.removeLayer(st.polyline);st.polyline=null;}
+  if(!st.waypoints.length) return;
+  if(st.waypoints.length>=2&&!res){
+    st.polyline=L.polyline(st.waypoints,{color:'#388bfd',weight:3,dashArray:'6,4',opacity:.6}).addTo(map);return;
   }
-
-  svg += `</svg>`;
-  wrap.innerHTML = svg;
+  if(!res) return;
+  let sIdx=1;
+  for(let i=0;i<st.waypoints.length-1;i++){
+    const step=res.steps[sIdx]||null,F=step?step.force:0,col=fCol(F,res.cableMax);
+    const seg=L.polyline([st.waypoints[i],st.waypoints[i+1]],{color:col,weight:4,opacity:.9}).addTo(map);
+    seg.bindTooltip(`${fmt(Math.round(F))} kg`,{permanent:false,direction:'top'});
+    st.colorSegs.push(seg);sIdx+=2;
+  }
 }
 
-// ─── HELPERS ───────────────────────────────────────────────────────────────
-function fmt(n) { return Number(n).toLocaleString('de-DE'); }
-function forceClass(f, max) {
-  const p = f / max;
-  if (p >= 1) return 'force-danger';
-  if (p >= 0.8) return 'force-warn';
-  return 'force-ok';
+// ─── KABEL & MASCHINE ───────────────────────────────────────────────────────
+function onCableChange(){
+  const id=document.getElementById('cable-select').value;
+  st.cable=CABLES.find(c=>c.id===id)||null;
+  const infoEl=document.getElementById('cable-info');
+  if(st.cable){
+    infoEl.style.display='block';
+    document.getElementById('cable-info-grid').innerHTML=`
+      <div><div class="ci-label">Rollwiderstand</div><div class="ci-value" style="color:var(--accent)">${st.cable.gw} kg/m</div></div>
+      <div><div class="ci-label">Durchmesser</div><div class="ci-value">${st.cable.d} mm</div></div>
+      <div><div class="ci-label">Max. Zugkraft</div><div class="ci-value">${fmt(st.cable.fMax)} kg</div></div>
+      <div><div class="ci-label">Biegeradius</div><div class="ci-value">${st.cable.bendR} mm</div></div>
+      <div><div class="ci-label">Querschnitt</div><div class="ci-value">${st.cable.cs} mm²</div></div>
+      <div><div class="ci-label">Standard-Trommel</div><div class="ci-value">${st.cable.drumL} m</div></div>`;
+    document.getElementById('cable-length').placeholder=`${st.cable.drumL} m (Standard)`;
+    document.getElementById('rw-info').textContent=`Rollwiderstand: ${st.cable.gw} kg/m (Brutto-Gewicht Kabel)`;
+  } else {
+    infoEl.style.display='none';
+    document.getElementById('rw-info').textContent='Rollwiderstand: — kg/m (Kabel wählen)';
+  }
+  recalc();
+}
+function selectMachine(id){st.machine=id;recalc();}
+function setMu(idx,val){if(val>0&&idx<st.route.length){st.route[idx].mu=val;recalc();}}
+
+async function searchAddr(){
+  const q=document.getElementById('addr-input').value.trim();if(!q) return;
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=de`);
+    const d=await r.json();
+    if(d.length) map.setView([+d[0].lat,+d[0].lon],16);
+    else alert('Adresse nicht gefunden.');
+  }catch(e){alert('Suche fehlgeschlagen.');}
 }
 
-// ─── MASTER RECALC + RENDER ────────────────────────────────────────────────
-function renderViz() {
-  const result = calculate();
-  if (st.vizTab === 'route') renderRouteViz(result);
-  else renderForceChart(result);
-}
-
-function recalc() {
-  const result = calculate();
-  renderRouteList(result);
-  renderTable(result);
-  renderSummary(result);
-  renderViz();
-  updateMachineStatus(result);
-}
-
-// ─── BOOT ──────────────────────────────────────────────────────────────────
-init();
+(function init(){
+  const sel=document.getElementById('cable-select');
+  CABLES.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
+  renderMachines(null);render();
+})();
 </script>
 </body>
 </html>
