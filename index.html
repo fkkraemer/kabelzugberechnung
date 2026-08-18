@@ -119,6 +119,62 @@ select:focus,input:focus { border-color:var(--accent); }
 .leaflet-control-attribution a { color:#8b949e!important; }
 .leaflet-control-zoom a { background:var(--s2)!important; color:var(--text)!important; border-color:var(--border)!important; }
 .leaflet-control-zoom a:hover { background:var(--s3)!important; }
+
+/* ─── PDF-EXPORT / DRUCKANSICHT ──────────────────────────────────────────── */
+#print-doc { display:none; }
+.pdf-hint { font-size:10px; color:var(--text3); margin-top:8px; line-height:1.5; }
+.pdf-hint b { color:var(--text2); }
+
+@media print {
+  @page { size:A4 portrait; margin:12mm 11mm 13mm 11mm; }
+  html,body { height:auto !important; overflow:visible !important; display:block !important;
+              background:#fff !important; color:#111 !important; }
+  body > header, body > .layout { display:none !important; }
+  #print-doc { display:block !important; }
+}
+
+#print-doc { background:#fff; color:#111; font-size:10pt; line-height:1.35;
+  font-family:-apple-system,'Segoe UI',sans-serif;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+#print-doc svg { max-width:100%; height:auto; }
+#print-doc .leaflet-control-attribution { background:rgba(255,255,255,.85) !important; color:#444 !important; }
+#print-doc .leaflet-control-attribution a { color:#444 !important; }
+
+.pd-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px;
+           border-bottom:2px solid #0969da; padding-bottom:7px; break-inside:avoid; }
+.pd-firm { font-size:16pt; font-weight:700; color:#0969da; letter-spacing:.3px; line-height:1.1; }
+.pd-doc  { font-size:11pt; font-weight:600; margin-top:3px; }
+.pd-sub  { font-size:8pt; color:#5a6270; margin-top:3px; }
+.pd-meta { border-collapse:collapse; font-size:8.5pt; flex-shrink:0; }
+.pd-meta td { border:1px solid #c9ced6; padding:2px 8px; }
+.pd-meta td:first-child { background:#f2f4f7; color:#5a6270; font-weight:600; }
+
+.pd-sec { margin-top:12px; }
+.pd-h { font-size:9pt; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#0969da;
+        border-bottom:1px solid #c9ced6; padding-bottom:2px; margin-bottom:6px; break-after:avoid; }
+.pd-t { width:100%; border-collapse:collapse; font-size:8.5pt; }
+.pd-t thead { display:table-header-group; }
+.pd-t tr { break-inside:avoid; }
+.pd-t th { background:#f2f4f7; border:1px solid #c9ced6; padding:3px 6px; text-align:left; font-weight:700; }
+.pd-t td { border:1px solid #c9ced6; padding:3px 6px; vertical-align:top; }
+.pd-num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+.pd-kv { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; break-inside:avoid; }
+.pd-stat { border:1px solid #c9ced6; border-radius:4px; padding:6px 9px; }
+.pd-stat-l { font-size:7.5pt; color:#5a6270; text-transform:uppercase; letter-spacing:.4px; }
+.pd-stat-v { font-size:15pt; font-weight:700; line-height:1.15; }
+.pd-stat-u { font-size:7.5pt; color:#5a6270; }
+.pd-ok { color:#1a7f37; } .pd-warn { color:#9a6700; } .pd-bad { color:#cf222e; }
+
+.pd-alert { border-radius:4px; padding:5px 9px; font-size:9pt; margin-top:5px; border:1px solid; break-inside:avoid; }
+.pd-alert.ok     { border-color:#1a7f37; background:#eaf6ec; color:#116329; }
+.pd-alert.warn   { border-color:#9a6700; background:#fdf5e2; color:#7d4e00; }
+.pd-alert.danger { border-color:#cf222e; background:#fdeceb; color:#a40e26; }
+
+.pd-viz { border:1px solid #c9ced6; border-radius:4px; padding:4px; text-align:center; break-inside:avoid; }
+.pd-map-box { border:1px solid #c9ced6; border-radius:4px; overflow:hidden; position:relative; break-inside:avoid; }
+.pd-foot { margin-top:15px; padding-top:6px; border-top:1px solid #c9ced6;
+           font-size:7.5pt; color:#5a6270; line-height:1.55; break-inside:avoid; }
 </style>
 </head>
 <body>
@@ -181,6 +237,24 @@ select:focus,input:focus { border-color:var(--accent); }
       <div class="card-title"><span class="dot"></span>Zugmaschine</div>
       <div class="machine-grid" id="machine-grid"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>PDF-Export</div>
+      <div class="form-row">
+        <div><label>Baustelle / Projekt</label><input type="text" id="pdf-project" placeholder="z. B. Merkurstr. 15a"></div>
+        <div><label>Bearbeiter</label><input type="text" id="pdf-author" placeholder="Name"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin:2px 0 10px;cursor:pointer;padding:8px 10px;background:var(--s1);border:1px solid var(--border);border-radius:6px;">
+        <input type="checkbox" id="pdf-with-map" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
+        <span style="font-size:12px;color:var(--text2);">Kartenausschnitt mitdrucken <span style="color:var(--text3);font-size:11px;">— Ausschnitt wie gerade zu sehen; für den Ausdruck wird automatisch ein heller Kartenstil verwendet (außer bei Satellit)</span></span>
+      </label>
+      <div class="btn-row">
+        <button class="btn btn-sm" onclick="exportPDF('kurz')">Kurzfassung (1 Seite)</button>
+        <button class="btn btn-sm btn-ghost" onclick="exportPDF('voll')">Vollprotokoll</button>
+      </div>
+      <div class="pdf-hint">Es öffnet sich der Druckdialog — dort als Ziel <b>„Als PDF speichern"</b> wählen.</div>
+    </div>
+
   </div>
 
   <div class="mid-panel">
@@ -236,6 +310,8 @@ select:focus,input:focus { border-color:var(--accent); }
 
 </div>
 
+<div id="print-doc"></div>
+
 <script>
 const CABLES = [
   { id:'nayy_4x185',  name:'NAYY-J 1x4x185 SE',                    d:51, bendR:770, cs:740,  fMax:2220, gw:5.08, nw:3.88, drumW:2539, drumL:500  },
@@ -272,6 +348,12 @@ const tileLayers = {
   street:    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                {attribution:'© OpenStreetMap',maxZoom:19}),
 };
+// Nur fuer den Ausdruck: heller CARTO-Stil. Kein eigener Knopf in der Oberflaeche.
+// Bewusst nicht OpenStreetMap: deren Kachelserver verlangen einen Referer und
+// antworten bei file://-Aufruf mit 403 ("Access blocked").
+const printTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  {attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:20});
+
 const map = L.map('map',{zoomControl:true}).setView([49.4440,7.7689],13);
 tileLayers.dark.addTo(map);
 let activeLayerKey='dark';
@@ -549,16 +631,7 @@ function renderSummary(res){
   document.getElementById('sum-len').textContent=fmt(res.totalLen);
   document.getElementById('sum-ascent').textContent=res.totalAscent>0?Math.round(res.totalAscent)+'':'—';
   document.getElementById('sum-descent').textContent=res.totalDescent>0?Math.round(res.totalDescent)+'':'—';
-  const mach=MACHINES.find(m=>m.id===st.machine);
-  const alerts=[];
-  if(pct>100) alerts.push({t:'danger',m:`🚨 Zugkraft ${fmt(Math.round(res.maxForce))} kg > Kabelgrenze ${fmt(res.cableMax)} kg!`});
-  else if(pct>80) alerts.push({t:'warn',m:`⚠️ Zugkraft bei ${pct.toFixed(0)} % der Kabelgrenze.`});
-  else alerts.push({t:'ok',m:`✓ Innerhalb Kabelgrenze (${pct.toFixed(0)} % ausgelastet).`});
-  if(mach){
-    const ok2=res.maxForce<=mach.maxF,mp=Math.round(res.maxForce/mach.maxF*100);
-    alerts.push(ok2?{t:'ok',m:`✓ Maschine ausreichend (${mp} % ausgelastet).`}:{t:'danger',m:`🚨 Maschine zu schwach! ${fmt(Math.round(res.maxForce))} kg > ${fmt(mach.maxF)} kg.`});
-    if(res.totalLen>300) alerts.push({t:'warn',m:`⚠️ Trasse ${fmt(res.totalLen)} m > Seil 300 m.`});
-  }
+  const alerts=alertsFor(res);
   document.getElementById('alerts-wrap').innerHTML=alerts.map(a=>`<div class="alert alert-${a.t}">${a.m}</div>`).join('');
 }
 
@@ -579,8 +652,8 @@ function renderViz(res){
   else renderElevProfile();
 }
 
-function renderRouteViz(res){
-  const wrap=document.getElementById('route-svg-wrap');
+function renderRouteViz(res,wrapOverride){
+  const wrap=wrapOverride||document.getElementById('route-svg-wrap');
   if(!res||res.steps.length<=1){wrap.innerHTML='<div class="empty-state">Punkte auf der Karte setzen.</div>';return;}
   const PT=28,PR=80,PB=48,PL=28,NR=18;
   let wx=0,wy=0,dir=0;
@@ -640,8 +713,8 @@ function renderRouteViz(res){
   wrap.innerHTML=p.join('');
 }
 
-function renderForceChart(res){
-  const wrap=document.getElementById('force-chart-wrap');
+function renderForceChart(res,wrapOverride){
+  const wrap=wrapOverride||document.getElementById('force-chart-wrap');
   if(!res||res.steps.length<=1){wrap.innerHTML='<div class="empty-state">Noch keine Trasse.</div>';return;}
   const W=Math.max(wrap.clientWidth||500,400),H=200,PAD={top:16,right:20,bottom:36,left:65};
   const cw=W-PAD.left-PAD.right,ch=H-PAD.top-PAD.bottom;
@@ -670,8 +743,8 @@ function renderForceChart(res){
 }
 
 // ─── HÖHENPROFIL ────────────────────────────────────────────────────────────
-function renderElevProfile(){
-  const wrap=document.getElementById('elev-profile-wrap');
+function renderElevProfile(wrapOverride){
+  const wrap=wrapOverride||document.getElementById('elev-profile-wrap');
   if(st.waypoints.length<2){wrap.innerHTML='<div class="empty-state">Punkte setzen — Höhendaten werden automatisch geladen.</div>';return;}
   const elevs=st.elevations;
   const hasAny=elevs.some(e=>typeof e==='number');
@@ -793,6 +866,272 @@ async function searchAddr(){
     if(d.length) map.setView([+d[0].lat,+d[0].lon],16);
     else alert('Adresse nicht gefunden.');
   }catch(e){alert('Suche fehlgeschlagen.');}
+}
+
+// ─── PDF-EXPORT (Druckansicht) ──────────────────────────────────────────────
+// Bildschirm-Farben (dunkel) -> Druckfarben (hell). Es werden nur 6-stellige
+// Hex-Werte ersetzt; kurze wie #fff (Ziffern in farbigen Kreisen) bleiben weiß.
+const PD_COL = {
+  '#161b22':'#ffffff', '#0d1117':'#ffffff', '#21262d':'#e8ebef', '#30363d':'#c9ced6',
+  '#6e7681':'#5a6270', '#8b949e':'#5a6270', '#e6edf3':'#111111', '#7dc8ff':'#0b5cad',
+  '#f0c040':'#8a6100', '#388bfd':'#0969da', '#3fb950':'#1a7f37', '#d29922':'#9a6700',
+  '#f85149':'#cf222e',
+};
+const pdLight = svg => svg.replace(/#[0-9a-fA-F]{6}\b/g, m => PD_COL[m.toLowerCase()] || m);
+const pdCls = (f,max) => { const p=f/max; return p>=1?'pd-bad':p>=.8?'pd-warn':'pd-ok'; };
+const pdEsc = s => String(s==null?'':s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[ch]);
+const pdNum = (v,dec) => v==null?'—':Number(v).toFixed(dec==null?1:dec).replace('.',',');
+const pdStat = (label,val,unit,cls) =>
+  `<div class="pd-stat"><div class="pd-stat-l">${label}</div><div class="pd-stat-v ${cls||''}">${val}</div><div class="pd-stat-u">${unit}</div></div>`;
+const pdAlert = a => `<div class="pd-alert ${a.t}">${a.m.replace(/^(🚨|⚠️|✓)\s*/,'')}</div>`;
+
+// Warn- und OK-Hinweise — von Bildschirm-Zusammenfassung und PDF gemeinsam genutzt.
+function alertsFor(res){
+  const pct=res.maxForce/res.cableMax*100;
+  const mach=MACHINES.find(m=>m.id===st.machine);
+  const alerts=[];
+  if(pct>100) alerts.push({t:'danger',m:`🚨 Zugkraft ${fmt(Math.round(res.maxForce))} kg > Kabelgrenze ${fmt(res.cableMax)} kg!`});
+  else if(pct>80) alerts.push({t:'warn',m:`⚠️ Zugkraft bei ${pct.toFixed(0)} % der Kabelgrenze.`});
+  else alerts.push({t:'ok',m:`✓ Innerhalb Kabelgrenze (${pct.toFixed(0)} % ausgelastet).`});
+  if(mach){
+    const ok=res.maxForce<=mach.maxF, mp=Math.round(res.maxForce/mach.maxF*100);
+    alerts.push(ok?{t:'ok',m:`✓ Maschine ausreichend (${mp} % ausgelastet).`}
+                  :{t:'danger',m:`🚨 Maschine zu schwach! ${fmt(Math.round(res.maxForce))} kg > ${fmt(mach.maxF)} kg.`});
+    if(res.totalLen>300) alerts.push({t:'warn',m:`⚠️ Trasse ${fmt(res.totalLen)} m > Seil 300 m.`});
+  }
+  return alerts;
+}
+
+function pdMeta(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return {
+    proj:(document.getElementById('pdf-project').value||'').trim(),
+    author:(document.getElementById('pdf-author').value||'').trim(),
+    date:`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()}`,
+    time:`${p(d.getHours())}:${p(d.getMinutes())}`,
+  };
+}
+
+// Diagramm in Druckbreite erzeugen: unsichtbarer Container mit fester Breite,
+// die bestehenden Render-Funktionen zeichnen hinein, danach Farben aufhellen.
+function pdViz(kind,res,width){
+  const tmp=document.createElement('div');
+  tmp.style.cssText=`position:absolute;left:-10000px;top:0;width:${width}px;`;
+  document.body.appendChild(tmp);
+  try{
+    if(kind==='route') renderRouteViz(res,tmp);
+    else if(kind==='force') renderForceChart(res,tmp);
+    else renderElevProfile(tmp);
+    return tmp.querySelector('svg') ? pdLight(tmp.innerHTML) : '';
+  }catch(e){
+    console.warn('Diagramm für PDF fehlgeschlagen:',kind,e);
+    return '';
+  }finally{
+    tmp.remove();
+  }
+}
+
+// Kartenausschnitt: Kopie des Leaflet-Containers, auf Druckbreite skaliert.
+// Die Kacheln sind echte Bilder und werden vom Browser mitgedruckt.
+function pdMapBox(width,maxHeight){
+  const src=document.getElementById('map');
+  const w=src.clientWidth, h=src.clientHeight;
+  if(!w||!h) return '';
+  // Auf Druckbreite skalieren, aber nie hoeher als eine halbe Seite werden
+  const sc=Math.min(width/w,(maxHeight||430)/h);
+  const clone=src.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.querySelectorAll('.leaflet-control-container .leaflet-top').forEach(el=>el.remove());
+  clone.style.cssText=`width:${w}px;height:${h}px;position:absolute;left:0;top:0;transform-origin:0 0;transform:scale(${sc.toFixed(4)});`;
+  const box=document.createElement('div');
+  box.className='pd-map-box';
+  box.style.width=Math.round(w*sc)+'px';
+  box.style.height=Math.round(h*sc)+'px';
+  box.style.margin='0 auto';
+  box.appendChild(clone);
+  return box.outerHTML;
+}
+
+function buildPrintDoc(mode,res){
+  const full=mode==='voll', c=st.cable, W=700, meta=pdMeta();
+  const mach=MACHINES.find(m=>m.id===st.machine);
+  const pct=res.maxForce/res.cableMax*100;
+  const inputLen=parseFloat(document.getElementById('cable-length').value);
+  const cLen=inputLen>0?inputLen:c.drumL;
+  const drive=document.getElementById('drum-drive').checked;
+  const withMap=document.getElementById('pdf-with-map').checked;
+  const segCount=st.route.filter(r=>r.type==='seg').length;
+  const curCount=st.route.filter(r=>r.type==='cur').length;
+  let h='';
+
+  // Kopfbereich
+  h+=`<div class="pd-head">
+    <div>
+      <div class="pd-firm">FK Krämer</div>
+      <div class="pd-doc">Kabelzugberechnung — ${full?'Vollprotokoll':'Kurzfassung'}</div>
+      <div class="pd-sub">${pdEsc(c.name)} · ${fmt(res.totalLen)} m Trasse · ${segCount} Abschnitte · ${curCount} Kurven</div>
+    </div>
+    <table class="pd-meta">
+      <tr><td>Baustelle</td><td>${pdEsc(meta.proj)||'—'}</td></tr>
+      <tr><td>Bearbeiter</td><td>${pdEsc(meta.author)||'—'}</td></tr>
+      <tr><td>Datum</td><td>${meta.date}, ${meta.time} Uhr</td></tr>
+    </table>
+  </div>`;
+
+  // Ergebnis
+  h+=`<div class="pd-sec"><div class="pd-h">Ergebnis</div>
+    <div class="pd-kv">
+      ${pdStat('Max. Zugkraft',fmt(Math.round(res.maxForce)),'kg',pdCls(res.maxForce,res.cableMax))}
+      ${pdStat('Kabelgrenze',fmt(res.cableMax),'kg','')}
+      ${pdStat('Auslastung',pct.toFixed(1).replace('.',','),'% der Kabelgrenze',pdCls(res.maxForce,res.cableMax))}
+      ${pdStat('Gesamtlänge',fmt(res.totalLen),'m','')}
+      ${pdStat('Anstieg gesamt',res.totalAscent>0?fmt(Math.round(res.totalAscent)):'—','m','')}
+      ${pdStat('Abstieg gesamt',res.totalDescent>0?fmt(Math.round(res.totalDescent)):'—','m','')}
+    </div>
+    ${alertsFor(res).map(pdAlert).join('')}
+  </div>`;
+
+  // Kabel und Zugmaschine
+  const kv=[
+    ['Kabeltyp', pdEsc(c.name)],
+    ['Durchmesser', c.d+' mm'],
+    ['Querschnitt', c.cs+' mm²'],
+    ['Min. Biegeradius', fmt(c.bendR)+' mm'],
+    ['Max. Zugkraft Kabel', fmt(c.fMax)+' kg'],
+    ['Rollwiderstand', c.gw+' kg/m'],
+    ['Kabellänge auf Trommel', fmt(cLen)+' m'+(inputLen>0?'':' (Standard)')],
+    ['Kabelgewicht auf Trommel', fmt(Math.round(res.drumW))+' kg'],
+    ['Anzugskraft (Start)', fmt(Math.round(res.startF))+' kg'+(drive?' — Trommelwagen mit Antrieb':' (5 % Trommelgewicht)')],
+    ['Zugmaschine', mach?pdEsc(mach.name)+' · max. '+fmt(mach.maxF)+' kg':'—'],
+  ];
+  h+=`<div class="pd-sec"><div class="pd-h">Kabel und Zugmaschine</div><table class="pd-t"><tbody>`;
+  for(let i=0;i<kv.length;i+=2){
+    h+=`<tr><th style="width:19%">${kv[i][0]}</th><td style="width:31%">${kv[i][1]}</td>`;
+    h+= kv[i+1] ? `<th style="width:19%">${kv[i+1][0]}</th><td>${kv[i+1][1]}</td></tr>`
+                : `<td colspan="2"></td></tr>`;
+  }
+  h+=`</tbody></table></div>`;
+
+  if(full){
+    // Zugmaschinen-Vergleich
+    h+=`<div class="pd-sec"><div class="pd-h">Zugmaschinen im Vergleich</div>
+      <table class="pd-t"><thead><tr><th>Maschine</th><th class="pd-num">Max. Zugkraft</th><th>Hinweis</th><th class="pd-num">Auslastung</th><th>Bewertung</th></tr></thead><tbody>
+      ${MACHINES.map(mm=>{
+        const ok=res.maxForce<=mm.maxF, mp=Math.round(res.maxForce/mm.maxF*100);
+        return `<tr><td>${pdEsc(mm.name)}${mm.id===st.machine?' <b>(gewählt)</b>':''}</td><td class="pd-num">${fmt(mm.maxF)} kg</td><td>${pdEsc(mm.note)}</td><td class="pd-num">${mp} %</td><td class="${ok?'pd-ok':'pd-bad'}">${ok?'ausreichend':'zu schwach'}</td></tr>`;
+      }).join('')}
+      </tbody></table></div>`;
+
+    // Zugkraft Schritt für Schritt
+    const s0=res.steps[0];
+    h+=`<div class="pd-sec"><div class="pd-h">Zugkraft Schritt für Schritt</div>
+      <table class="pd-t"><thead><tr><th>Nr.</th><th>Element</th><th class="pd-num">Länge / Winkel</th><th class="pd-num">μ</th><th class="pd-num">Δ Höhe</th><th class="pd-num">Steigung</th><th class="pd-num">Zugkraft</th><th class="pd-num">Ausl.</th><th>Berechnung</th></tr></thead><tbody>
+      <tr><td>0</td><td>${pdEsc(s0.label)}</td><td class="pd-num">—</td><td class="pd-num">—</td><td class="pd-num">—</td><td class="pd-num">—</td>
+        <td class="pd-num ${pdCls(s0.force,res.cableMax)}"><b>${fmt(Math.round(s0.force))} kg</b></td>
+        <td class="pd-num">${(s0.force/res.cableMax*100).toFixed(1).replace('.',',')} %</td>
+        <td>${pdEsc(s0.info)}</td></tr>`;
+    st.route.forEach((item,i)=>{
+      const s=res.steps[i+1]; if(!s) return;
+      const isSeg=item.type==='seg';
+      const dim=isSeg?fmt(item.len)+' m':item.angle+'° '+(item.dir==='right'?'rechts':'links');
+      const dh=(isSeg&&item.dH!=null)?(item.dH>0?'+':'')+pdNum(item.dH,1)+' m':'—';
+      const sp=(isSeg&&item.slopePct!=null)?(item.slopePct>0?'+':'')+pdNum(item.slopePct,1)+' %':'—';
+      const name=isSeg?item.label:'Kurve '+(item.dir==='right'?'rechts':'links');
+      h+=`<tr><td>${i+1}</td><td>${pdEsc(name)}</td><td class="pd-num">${dim}</td><td class="pd-num">${pdNum(item.mu,2)}</td>
+        <td class="pd-num">${dh}</td><td class="pd-num">${sp}</td>
+        <td class="pd-num ${pdCls(s.force,res.cableMax)}"><b>${fmt(Math.round(s.force))} kg</b></td>
+        <td class="pd-num">${(s.force/res.cableMax*100).toFixed(1).replace('.',',')} %</td>
+        <td>${pdEsc(s.info)}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+
+    // Trassenpunkte
+    if(st.waypoints.length){
+      let cum=0;
+      h+=`<div class="pd-sec"><div class="pd-h">Trassenpunkte (Koordinaten)</div>
+        <table class="pd-t"><thead><tr><th>Punkt</th><th class="pd-num">Breite (N)</th><th class="pd-num">Länge (E)</th><th class="pd-num">Höhe [m ü. NN]</th><th class="pd-num">Abstand zum Vorpunkt</th><th class="pd-num">Kumuliert</th></tr></thead><tbody>`;
+      st.waypoints.forEach((wp,i)=>{
+        const d=i>0?Math.round(map.distance(st.waypoints[i-1],wp)):0;
+        cum+=d;
+        const e=st.elevations[i];
+        h+=`<tr><td>${i+1}</td><td class="pd-num">${wp.lat.toFixed(6)}</td><td class="pd-num">${wp.lng.toFixed(6)}</td>
+          <td class="pd-num">${typeof e==='number'?pdNum(e,1):'—'}</td>
+          <td class="pd-num">${i>0?fmt(d)+' m':'—'}</td><td class="pd-num">${fmt(cum)} m</td></tr>`;
+      });
+      h+=`</tbody></table></div>`;
+    }
+  }
+
+  // Diagramme
+  const vizes = full
+    ? [['route','Trassenplan (schematisch)'],['force','Kraftverlauf über die Trasse'],['elev','Höhenprofil']]
+    : [['force','Kraftverlauf über die Trasse']];
+  vizes.forEach(v=>{
+    const svg=pdViz(v[0],res,W);
+    if(svg) h+=`<div class="pd-sec"><div class="pd-h">${v[1]}</div><div class="pd-viz">${svg}</div></div>`;
+  });
+
+  // Kartenausschnitt (optional)
+  if(withMap){
+    const mapHtml=pdMapBox(W);
+    if(mapHtml) h+=`<div class="pd-sec"><div class="pd-h">Kartenausschnitt</div>${mapHtml}</div>`;
+  }
+
+  // Fußzeile
+  h+=`<div class="pd-foot">
+    <b>Berechnungsgrundlage:</b> Gerade Abschnitte F = Länge × Rollwiderstand × μ, zuzüglich Steigungsanteil F = Rollwiderstand × Länge × sin(Neigung).
+    Kurven nach Seilreibung F₂ = F₁ × e^(μ × α). Anzugskraft am Start = 5 % des Kabelgewichts auf der Trommel${drive?' — hier 0 kg, da Kabeltrommelwagen mit Antrieb':''}.<br>
+    <b>Höhendaten:</b> öffentliche Höhenmodelle (EU-DEM 25 m / SRTM 30 m), Genauigkeit rund ± 5 m — Steigungswerte sind Richtwerte.<br>
+    <b>Hinweis:</b> Rechnerische Näherung ohne Gewähr. Verschmutzung, Rollenabstand, Wasser im Rohr und Temperatur können die tatsächliche Zugkraft deutlich verändern — Werte vor dem Einzug auf der Baustelle prüfen.<br>
+    Erstellt mit Kabelzugberechnung v3 — FK Krämer · ${meta.date}, ${meta.time} Uhr
+  </div>`;
+
+  return h;
+}
+
+// Der dunkle Kartenstil wird auf Papier ein schwarzer Block. Steht ein Druck mit
+// Karte an, wird deshalb kurz auf den hellen Stil "Strasse" umgeschaltet, auf die
+// Kacheln gewartet und danach der vorherige Stil wiederhergestellt.
+function pdWithLightMap(run){
+  const wantsMap=document.getElementById('pdf-with-map').checked;
+  // Satellit bleibt stehen - wer ihn waehlt, will das Luftbild auch auf dem Papier.
+  if(!wantsMap||activeLayerKey==='satellite'){ run(()=>{}); return; }
+  const vorher=tileLayers[activeLayerKey];
+  map.removeLayer(vorher);
+  printTiles.addTo(map);
+  let started=false;
+  const go=()=>{ if(started)return; started=true; run(()=>{
+    map.removeLayer(printTiles); vorher.addTo(map);
+  }); };
+  printTiles.once('load',()=>setTimeout(go,150));
+  setTimeout(go,3000);   // Notbremse, falls das load-Ereignis ausbleibt
+}
+
+function exportPDF(mode){
+  const res=calculate();
+  if(!res){
+    alert('Für den PDF-Export bitte zuerst ein Kabel wählen und mindestens zwei Punkte auf der Karte setzen.');
+    return;
+  }
+  pdWithLightMap(restoreLayer=>{
+    const meta=pdMeta();
+    const doc=document.getElementById('print-doc');
+    doc.innerHTML=buildPrintDoc(mode,res);
+
+    // Dateinamen-Vorschlag im Druckdialog steuern
+    const oldTitle=document.title;
+    const slug=(meta.proj||'Kabelzug').replace(/[^\wÄÖÜäöüß \-]+/g,'').trim().replace(/\s+/g,'_')||'Kabelzug';
+    document.title=`Kabelzugberechnung_${slug}_${meta.date.replace(/\./g,'-')}`;
+
+    const restore=()=>{
+      document.title=oldTitle;
+      doc.innerHTML='';
+      restoreLayer();
+      window.removeEventListener('afterprint',restore);
+    };
+    window.addEventListener('afterprint',restore);
+    setTimeout(()=>window.print(),150);
+  });
 }
 
 (function init(){
