@@ -348,7 +348,7 @@ const tileLayers = {
   street:    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                {attribution:'© OpenStreetMap',maxZoom:19}),
 };
-// Nur fuer den Ausdruck: heller CARTO-Stil. Kein eigener Knopf in der Oberflaeche.
+// Nur für den Ausdruck: heller CARTO-Stil. Kein eigener Knopf in der Oberfläche.
 // Bewusst nicht OpenStreetMap: deren Kachelserver verlangen einen Referer und
 // antworten bei file://-Aufruf mit 403 ("Access blocked").
 const printTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -937,7 +937,7 @@ function pdMapBox(width,maxHeight){
   const src=document.getElementById('map');
   const w=src.clientWidth, h=src.clientHeight;
   if(!w||!h) return '';
-  // Auf Druckbreite skalieren, aber nie hoeher als eine halbe Seite werden
+  // Auf Druckbreite skalieren, aber nie höher als eine halbe Seite werden
   const sc=Math.min(width/w,(maxHeight||430)/h);
   const clone=src.cloneNode(true);
   clone.removeAttribute('id');
@@ -1090,11 +1090,11 @@ function buildPrintDoc(mode,res){
 }
 
 // Der dunkle Kartenstil wird auf Papier ein schwarzer Block. Steht ein Druck mit
-// Karte an, wird deshalb kurz auf den hellen Stil "Strasse" umgeschaltet, auf die
-// Kacheln gewartet und danach der vorherige Stil wiederhergestellt.
+// Karte an, wird deshalb kurz auf die helle Druck-Kachelebene umgeschaltet, auf
+// die Kacheln gewartet und danach der vorherige Stil wiederhergestellt.
 function pdWithLightMap(run){
   const wantsMap=document.getElementById('pdf-with-map').checked;
-  // Satellit bleibt stehen - wer ihn waehlt, will das Luftbild auch auf dem Papier.
+  // Satellit bleibt stehen — wer ihn wählt, will das Luftbild auch auf dem Papier.
   if(!wantsMap||activeLayerKey==='satellite'){ run(()=>{}); return; }
   const vorher=tileLayers[activeLayerKey];
   map.removeLayer(vorher);
